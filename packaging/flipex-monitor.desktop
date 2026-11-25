@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=FlipEx Monitor
+Name=FlipEx Monitor — Connexion
 GenericName=Moniteur DeX interactif
-Comment=Afficher et piloter le bureau DeX depuis le Chromebook
+Comment=Connecter et utiliser le bureau du téléphone avec le pavé tactile
 Exec=flipex-monitor
 Icon=video-display
-Terminal=true
+Terminal=false
 Categories=Utility;AudioVideo;Video;
 StartupNotify=false
