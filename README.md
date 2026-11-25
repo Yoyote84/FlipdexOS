@@ -42,6 +42,14 @@ chmod +x scripts/flipex-monitor.sh
 ./scripts/flipex-monitor.sh
 ```
 
+Pour installer le lanceur dans le menu des applications Debian :
+
+```bash
+bash scripts/install-system.sh
+```
+
+Ensuite ouvre **FlipEx Monitor (lecture seule)** dans le menu des applications, ou lance `flipex-monitor` dans un terminal.
+
 Si plusieurs appareils ADB sont présents :
 
 ```bash
