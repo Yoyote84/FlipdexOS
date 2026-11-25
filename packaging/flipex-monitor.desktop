@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=FlipEx Monitor (lecture seule)
-GenericName=Moniteur DeX
-Comment=Afficher le bureau DeX virtuel du téléphone sans le contrôler
+Name=FlipEx Monitor
+GenericName=Moniteur DeX interactif
+Comment=Afficher et piloter le bureau DeX depuis le Chromebook
 Exec=flipex-monitor
 Icon=video-display
 Terminal=true
