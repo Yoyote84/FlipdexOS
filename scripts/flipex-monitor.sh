@@ -3,13 +3,13 @@
 # DeX virtual/overlay display with Chromebook mouse + keyboard input.
 set -Eeuo pipefail
 
-VERSION="0.2.0"
+VERSION="0.3.0"
 ADB_BIN="${ADB:-adb}"
 SCRCPY_BIN="${SCRCPY:-scrcpy}"
 SERIAL="${ANDROID_SERIAL:-}"
 DISPLAY_SPEC="1280x720/160"
-DISPLAY_MODE="auto"
-MOUSE_MODE="uhid"
+DISPLAY_MODE="virtual"
+MOUSE_MODE="sdk"
 KEYBOARD_MODE="uhid"
 FPS="30"
 BIT_RATE="4M"
@@ -132,7 +132,7 @@ validate_options() {
   [[ "$BIT_RATE" =~ ^[1-9][0-9]*[KMG]$ ]] || die "débit invalide : utilise par exemple 4M ou 4000K."
   [[ "$MOUSE_MODE" == "uhid" || "$MOUSE_MODE" == "sdk" ]] || die "souris invalide : utilise uhid ou sdk."
   [[ "$KEYBOARD_MODE" == "uhid" || "$KEYBOARD_MODE" == "sdk" ]] || die "clavier invalide : utilise uhid ou sdk."
-  [[ "$DISPLAY_MODE" == "auto" || "$DISPLAY_MODE" == "virtual" || "$DISPLAY_MODE" == "overlay" ]] || die "mode écran invalide : auto, virtual ou overlay."
+  [[ "$DISPLAY_MODE" == "virtual" || "$DISPLAY_MODE" == "overlay" ]] || die "mode écran invalide : virtual ou overlay."
 }
 
 detect_android_version() {
@@ -216,9 +216,6 @@ start_monitor() {
   fi
 
   local selected_display="$DISPLAY_MODE"
-  if [[ "$selected_display" == "auto" ]]; then
-    if (( ANDROID_SDK >= 37 )); then selected_display="overlay"; else selected_display="virtual"; fi
-  fi
 
   local -a args
   args=(--serial="$SERIAL")
@@ -240,8 +237,10 @@ start_monitor() {
   fi
 
   args+=("--mouse=$MOUSE_MODE" "--keyboard=$KEYBOARD_MODE")
-  if has_scrcpy_option "--mouse-bind"; then args+=(--mouse-bind=++++:bhsn); fi
-  if has_scrcpy_option "--shortcut-mod"; then args+=(--shortcut-mod=lalt); fi
+  if [[ "$MOUSE_MODE" == "uhid" ]]; then
+    if has_scrcpy_option "--mouse-bind"; then args+=(--mouse-bind=++++:bhsn); fi
+    if has_scrcpy_option "--shortcut-mod"; then args+=(--shortcut-mod=lalt); fi
+  fi
   args+=("--max-fps=$FPS" "--video-bit-rate=$BIT_RATE")
   if has_scrcpy_option "--video-codec"; then args+=(--video-codec=h264); fi
   if has_scrcpy_option "--video-buffer"; then args+=(--video-buffer=0); fi
@@ -254,7 +253,7 @@ start_monitor() {
   info "Mode écran : $selected_display"
   info "Résolution : $DISPLAY_SPEC · $FPS images/s · $BIT_RATE"
   info "Souris : $MOUSE_MODE · Clavier : $KEYBOARD_MODE"
-  if [[ "$MOUSE_MODE" == "uhid" ]]; then info "La souris sera capturée dans DeX. Alt gauche libère/reprend le pointeur."; fi
+  if [[ "$MOUSE_MODE" == "sdk" ]]; then info "Mode souris SDK : le pavé tactile du Chromebook reste libre, sans capture du pointeur."; fi
   if [[ "$KEYBOARD_MODE" == "uhid" ]]; then info "Configure une fois le clavier physique Android en Français (AZERTY)."; fi
   info "Démarrage de scrcpy…"
 
