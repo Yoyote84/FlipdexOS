@@ -99,7 +99,10 @@ grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--video-buffer=0' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=30' "$FAKE_ARGS"
 grep -Fxq -- '--video-bit-rate=4M' "$FAKE_ARGS"
-! grep -Fxq -- '--no-control' "$FAKE_ARGS"
+if grep -Fxq -- '--no-control' "$FAKE_ARGS"; then
+  printf 'Le mode de contrôle ne doit pas être désactivé.\n' >&2
+  exit 1
+fi
 [[ "$(cat "$FAKE_STATE")" == "null" ]]
 
 # Android 16: virtual display path and SDK mouse fallback remain selectable.
@@ -110,6 +113,9 @@ grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=25' "$FAKE_ARGS"
 grep -Fxq -- '--video-bit-rate=6M' "$FAKE_ARGS"
-! grep -Fq -- '--display-id=' "$FAKE_ARGS"
+if grep -Fq -- '--display-id=' "$FAKE_ARGS"; then
+  printf 'Le mode virtuel ne doit pas forcer un display-id overlay.\n' >&2
+  exit 1
+fi
 
 printf 'Tous les tests FlipEx Monitor sont passés.\n'
