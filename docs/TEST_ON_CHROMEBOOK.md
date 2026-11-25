@@ -1,45 +1,35 @@
-# Premier test sur le Lenovo Duet
+# Test interactif sur le Lenovo Duet + Galaxy Z Flip 6
 
-Ce document permet de vérifier le portage sans confondre le miroir de l'écran principal avec l'écran DeX virtuel.
+Cette procédure vérifie l'écran DeX secondaire et le contrôle depuis le Chromebook.
 
-## 1. Identifier l'environnement
+## 1. Préparer le Chromebook
 
-Dans le terminal Linux du Chromebook :
+Dans le terminal Linux :
 
 ```bash
 uname -m
 cat /etc/os-release
-```
-
-L'architecture attendue est `aarch64` ou `arm64`. Le système doit disposer d'une session graphique Linux pour afficher la fenêtre scrcpy.
-
-## 2. Installer les outils
-
-Sur Debian/Ubuntu ARM64 :
-
-```bash
 sudo apt update
 sudo apt install adb scrcpy bash
 ```
 
-Vérifier les options indispensables :
+L'architecture attendue est `aarch64` ou `arm64`. Il faut une session graphique Linux pour afficher scrcpy.
+
+Vérifie que la version de scrcpy expose les options principales :
 
 ```bash
-scrcpy --help | grep -E -- '--new-display|--no-control|--no-vd-destroy-content'
+scrcpy --help | grep -E -- '--new-display|--display-id|--mouse|--keyboard|--video-buffer'
 adb version
 scrcpy --version
 ```
 
-La version de scrcpy doit proposer les trois options. Le lanceur s'arrête sans démarrer de session si elles manquent.
+## 2. Préparer le téléphone
 
-## 3. Autoriser le Z Flip 6
-
-Sur le téléphone :
-
-1. Activer les Options pour les développeurs.
-2. Activer le Débogage USB.
-3. Brancher le téléphone en USB-C, le déverrouiller et accepter la clé RSA ADB.
-4. Garder le téléphone déverrouillé pour ce premier essai.
+1. Active les Options pour les développeurs.
+2. Active le Débogage USB.
+3. Branche le téléphone en USB-C.
+4. Déverrouille-le et accepte la clé RSA ADB.
+5. Ouvre FlipEx sur le Z Flip 6 et vérifie qu'il est configuré.
 
 Sur le Chromebook :
 
@@ -47,9 +37,9 @@ Sur le Chromebook :
 adb devices -l
 ```
 
-L'appareil doit apparaître avec l'état `device`, et non `unauthorized`.
+Le Z Flip doit apparaître avec l'état `device`, pas `unauthorized`.
 
-## 4. Lancer l'écran DeX virtuel
+## 3. Lancer le bureau
 
 Depuis la racine du dépôt :
 
@@ -59,40 +49,73 @@ Depuis la racine du dépôt :
 ./scripts/flipex-monitor.sh
 ```
 
-Le lanceur vérifie la présence de l'application Android FlipEx (`dev.ved.flipdex`), active les trois réglages globaux nécessaires, démarre FlipEx, puis ouvre scrcpy sur un nouvel écran virtuel de 1920 × 1080.
+Le profil initial est 1280 × 720, 30 images/s et 4 Mbit/s. Le lanceur détecte le niveau d'API Android : nouvel écran virtuel sur les versions antérieures à Android 17, overlay sur API 37+.
 
-## 5. Vérifier le comportement demandé
+## 4. Tester la souris du Chromebook
 
-- Le bureau DeX doit apparaître dans une fenêtre scrcpy séparée.
-- L'écran principal du Z Flip doit rester utilisable indépendamment.
-- Les clics, mouvements de souris et frappes clavier faits dans la fenêtre scrcpy ne doivent pas piloter le téléphone : le processus reçoit `--no-control`.
-- Aucun flux audio n'est transféré par défaut.
+Le mode par défaut est `uhid`. Clique dans la fenêtre DeX : le pointeur du Chromebook doit être capturé et le pointeur Android doit se déplacer dans DeX.
 
-Fermer la fenêtre scrcpy pour terminer l'affichage. Le paramètre `--no-vd-destroy-content` demande à Android de déplacer les applications de l'écran virtuel vers l'écran principal lors de sa fermeture.
+- **Alt gauche** libère le pointeur pour le Chromebook.
+- Clique à nouveau dans la fenêtre pour reprendre la souris.
+- Teste clic gauche, clic droit, défilement et déplacement/redimensionnement d'une fenêtre DeX.
 
-## 6. Restaurer les réglages
+Pour essayer un pointeur toujours dessiné côté Chromebook :
 
-Après l'essai :
+```bash
+./scripts/flipex-monitor.sh --mouse sdk
+```
+
+Le mode SDK peut être plus fluide, mais peut mal gérer les barres de titre sur les versions récentes de One UI.
+
+## 5. Tester le clavier du Chromebook
+
+Le mode par défaut est `uhid`. Configure une fois la disposition physique du téléphone en **Français (AZERTY)** :
+
+```bash
+adb shell am start -a android.settings.HARD_KEYBOARD_SETTINGS
+```
+
+Clique dans une zone de texte DeX et saisis des lettres accentuées, chiffres et signes AZERTY. Le clavier virtuel Android est masqué sur l'écran DeX lorsque la version de scrcpy expose `--display-ime-policy=hide`.
+
+Si Android refuse l'injection clavier/souris, certaines versions nécessitent l'option développeur **USB debugging (Security settings) / Allow granting permissions and simulating input via USB debugging**, puis un redémarrage.
+
+## 6. Réduire les saccades
+
+Utilise le câble USB et garde le téléphone déverrouillé et éveillé. Commence par le profil léger :
+
+```bash
+./scripts/flipex-monitor.sh --display 1280x720/160 --fps 25 --bit-rate 3M
+```
+
+Pour une image plus nette, essaie :
+
+```bash
+./scripts/flipex-monitor.sh --display 1600x900/160 --fps 30 --bit-rate 6M
+```
+
+Si le pointeur lag mais l'image est fluide, compare `--mouse sdk` et `--mouse uhid`. Si les fenêtres DeX ne peuvent pas être déplacées, repasse à `uhid`.
+
+## 7. Fermer et restaurer
+
+Ferme la fenêtre scrcpy pour arrêter le flux. En mode overlay, le lanceur restaure normalement la valeur précédente d'`overlay_display_devices` à la fermeture.
+
+Pour remettre à 0 les trois réglages globaux de mode bureau :
 
 ```bash
 ./scripts/flipex-monitor.sh --restore
 ```
 
-Cette commande remet à 0 les trois réglages globaux modifiés par le lanceur. Elle ne remplace pas la fonction **Restore stock settings** de l'application FlipEx pour ses propres réglages.
+## Rapport de test
 
-## Informations à relever en cas d'échec
-
-Copier le résultat de ces commandes :
+En cas de problème, copie :
 
 ```bash
 uname -a
 cat /etc/os-release
 adb devices -l
 scrcpy --version
-scrcpy --help | grep -E -- '--new-display|--no-control|--no-vd-destroy-content'
+scrcpy --help | grep -E -- '--new-display|--display-id|--mouse|--keyboard|--video-buffer'
 ./scripts/flipex-monitor.sh --check
 ```
 
-Puis préciser à quel moment le problème survient : détection USB, lancement FlipEx, création du nouvel écran, ou ouverture de la fenêtre vidéo.
-
-Ne pas publier le numéro de série ADB ni les adresses IP privées dans un rapport public.
+Précise si le souci concerne la détection USB, l'image, le pointeur, le clavier, ou les fenêtres DeX. Ne publie pas le numéro de série ADB ni l'adresse IP privée.
