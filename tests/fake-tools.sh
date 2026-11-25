@@ -90,11 +90,10 @@ export ADB="$TMP/adb"
 export SCRCPY="$TMP/scrcpy"
 export ANDROID_SERIAL=FAKE123
 
-# Android 17: automatic mode must create an overlay display, pass keyboard/mouse controls,
-# and restore the previous overlay setting after scrcpy exits.
+# Default mode uses direct virtual display and SDK mouse, not the overlay.
 bash "$ROOT/scripts/flipex-monitor.sh"
-grep -Fxq -- '--display-id=2' "$FAKE_ARGS"
-grep -Fxq -- '--mouse=uhid' "$FAKE_ARGS"
+grep -Fxq -- '--new-display=1280x720/160' "$FAKE_ARGS"
+grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--video-buffer=0' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=30' "$FAKE_ARGS"
@@ -107,7 +106,7 @@ fi
 
 # Android 16: virtual display path and SDK mouse fallback remain selectable.
 export FAKE_SDK=36
-bash "$ROOT/scripts/flipex-monitor.sh" --display-mode virtual --mouse sdk --display 1600x900/160 --fps 25 --bit-rate 6M
+bash "$ROOT/scripts/flipex-monitor.sh" --display-mode virtual --mouse uhid --display 1600x900/160 --fps 25 --bit-rate 6M
 grep -Fxq -- '--new-display=1600x900/160' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
