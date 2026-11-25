@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [[ "$EUID" -ne 0 ]]; then
   if command -v sudo >/dev/null 2>&1; then
-    exec sudo "$0" "$@"
+    exec sudo bash "$0" "$@"
   fi
   printf 'Lance ce script en root (sudo requis).\n' >&2
   exit 1
