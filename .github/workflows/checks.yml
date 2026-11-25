@@ -1,0 +1,38 @@
+name: FlipdexOS Monitor checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: Vérifier les scripts Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck
+
+      - name: Vérifier la syntaxe Bash
+        run: |
+          bash -n scripts/flipex-monitor.sh
+          bash -n scripts/install-system.sh
+
+      - name: Analyser les scripts
+        run: |
+          shellcheck scripts/flipex-monitor.sh
+          shellcheck scripts/install-system.sh
+
+      - name: Vérifier l'aide sans périphérique connecté
+        run: |
+          bash scripts/flipex-monitor.sh --help
