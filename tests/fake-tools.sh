@@ -124,8 +124,7 @@ fi
 bash "$ROOT/scripts/flipex-monitor.sh" --display-mode overlay
 grep -Fxq -- '--display-id=2' "$FAKE_ARGS"
 if grep -Fq -- '--new-display=' "$FAKE_ARGS"; then
-  printf 'Le mode overlay ne doit pas créer un nouvel écran virtuel.
-' >&2
+  printf 'Le mode overlay ne doit pas créer un nouvel écran virtuel.\n' >&2
   exit 1
 fi
 [[ "$(cat "$FAKE_STATE")" == "null" ]]
