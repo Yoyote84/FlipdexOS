@@ -15,5 +15,5 @@ install -Dm755 "$ROOT/scripts/flipex-monitor.sh" /usr/local/bin/flipex-monitor
 install -Dm644 "$ROOT/packaging/flipex-monitor.desktop" /usr/share/applications/flipex-monitor.desktop
 
 printf 'FlipEx Monitor installé.\n'
-printf 'Ouvre « FlipEx Monitor (lecture seule) » depuis le menu des applications,\n'
-printf 'ou lance flipex-monitor dans un terminal.\n'
+printf 'Ouvre « FlipEx Monitor — Connexion » depuis le menu des applications.\n'
+printf 'Le téléphone doit être branché, déverrouillé et autorisé pour le débogage USB.\n'
