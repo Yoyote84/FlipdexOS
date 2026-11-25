@@ -33,7 +33,7 @@ case "$1" in
       pm) printf 'package:/data/app/dev.ved.flipdex/base.apk\n' ;;
       settings)
         action="$1"; shift
-        scope="$1"; shift
+        shift
         key="$1"; shift
         case "$action/$key" in
           get/overlay_display_devices) cat "$FAKE_STATE" ;;
