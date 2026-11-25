@@ -1,43 +1,91 @@
 # FlipdexOS — FlipEx Monitor
 
-Client Linux ARM64 pour afficher **le bureau DeX virtuel** de FlipEx dans une fenêtre du Chromebook, tout en utilisant la souris et le clavier du Chromebook pour piloter Android.
+Client Linux ARM64 pour ouvrir le bureau virtuel de **FlipEx** dans une fenêtre du Chromebook et le piloter avec le pavé tactile et le clavier du Chromebook.
 
-> **État : portage en cours, première version interactive.** Le lanceur, les modes d'affichage et les tests automatisés sont présents. Le fonctionnement avec le Lenovo Duet et le Z Flip 6 doit encore être confirmé sur le matériel réel. Aucun paquet ARM64 précompilé n'est publié.
+> **État : version interactive en cours de validation matérielle.** Le lanceur, l'entrée souris/clavier, l'installation dans le menu et les tests simulés sont présents. Le fonctionnement exact avec le Lenovo Duet et le Samsung Z Flip 6 doit encore être confirmé sur les appareils réels. Aucun paquet ARM64 précompilé n'est publié.
 
-## Fonctionnement
+## Ce que fait FlipEx Monitor
 
-- Connexion USB-C et ADB entre le Z Flip 6 et le Chromebook.
-- FlipEx prépare le mode bureau Android.
-- scrcpy affiche un second écran Android, pas le miroir de l'écran principal.
-- La souris et le clavier du Chromebook sont transmis au bureau DeX.
-- Le téléphone reste utilisable indépendamment.
+1. Le Chromebook se connecte au Z Flip 6 par USB et ADB.
+2. Le lanceur démarre l'application Android FlipEx.
+3. scrcpy ouvre un **nouvel écran virtuel** Android dans une fenêtre Linux : ce n'est pas le miroir de l'écran principal du téléphone.
+4. Le pavé tactile et le clavier du Chromebook contrôlent le bureau affiché.
+5. Le téléphone conserve son écran principal et peut rester utilisable indépendamment.
 
-Le mode par défaut est interactif : **ne pas ajouter `--no-control`**, car cela désactive volontairement la souris et le clavier distants.
+Le contrôle est actif : **ne pas ajouter `--no-control`**, car cette option désactive les entrées souris et clavier.
 
-## Réglages optimisés pour le Lenovo Duet
+## Commande depuis le menu du Chromebook
 
-Le profil initial limite la charge graphique et la latence :
+Après installation, ouvre **FlipEx Monitor — Connexion** depuis le menu des applications. Le lanceur choisit automatiquement l'unique téléphone ADB autorisé et démarre FlipEx puis le bureau virtuel. Le lanceur de menu ne demande pas d'ouvrir un terminal.
 
-- 1280 × 720 à 30 images/s ;
-- H.264 ;
-- débit vidéo 4 Mbit/s ;
-- tampon vidéo à 0 ms lorsqu'il est disponible ;
-- audio désactivé ;
-- maintien actif de l'écran lorsque la version de scrcpy le prend en charge.
+En cas d'erreur, une notification du bureau est affichée lorsque `notify-send` ou `kdialog` est disponible. Une notification indique également que le téléphone est connecté et que le bureau s'ouvre.
 
-Pour privilégier la netteté, tu peux monter à 1600 × 900 et 6 Mbit/s :
+**Première autorisation USB :** Android impose d'accepter l'empreinte de débogage USB sur le Z Flip 6. Branche le téléphone, déverrouille-le et accepte la demande Android (tu peux cocher « Toujours autoriser depuis cet ordinateur »). FlipdexOS ne peut pas accepter cette autorisation à la place de l'utilisateur. Le débogage USB doit rester activé.
+
+## Souris et clavier
+
+### Souris — mode par défaut `sdk`
+
+Le mode par défaut transmet les événements de souris à Android par son API, avec des coordonnées absolues. Le curseur reste géré par le Chromebook : il n'est pas capturé et il n'est pas nécessaire d'appuyer sur Alt pour le récupérer.
+
+Les clics secondaires sont explicitement transmis à Android au lieu d'être convertis en raccourcis Retour / Accueil / notifications. Le comportement précis du clic droit, du glisser-déposer et de la molette dépend aussi de la façon dont One UI et les applications Android gèrent les événements de souris.
+
+Pour utiliser une véritable souris HID Android à la place :
 
 ```bash
-./scripts/flipex-monitor.sh --display 1600x900/160 --fps 30 --bit-rate 6M
+flipex-monitor --mouse uhid
+```
+
+Le mode `uhid` simule une souris physique. scrcpy capture alors le pointeur du Chromebook ; **Alt gauche** libère ou reprend la capture. C'est pourquoi ce mode n'est pas le réglage par défaut.
+
+### Clavier — mode par défaut `uhid`
+
+Le clavier du Chromebook est transmis comme un clavier physique Android. Configure une seule fois le clavier physique du téléphone en Français (AZERTY) dans les paramètres Android.
+
+Pour tester l'autre mode clavier :
+
+```bash
+flipex-monitor --keyboard sdk
+```
+
+## Écran virtuel et écran overlay facultatif
+
+Le réglage par défaut est :
+
+- `--display-mode virtual` : demande directement un nouvel écran virtuel à scrcpy. C'est le chemin normal ; il évite le détour par un écran overlay de test.
+- `--display-mode overlay` : utilise à la place un écran secondaire overlay créé dans les paramètres Android. C'est une solution de repli à essayer uniquement si l'écran virtuel standard ne convient pas sur un appareil donné.
+
+L'overlay est facultatif et n'est **pas choisi automatiquement** sur Android 17. Quand le mode overlay est utilisé, le script mémorise la valeur précédente de `overlay_display_devices` et la restaure à la fermeture de scrcpy.
+
+## Profil initial pour le Lenovo Duet
+
+Les réglages par défaut limitent la charge graphique et la latence :
+
+- 1280 × 720 à 30 images/s ;
+- H.264 lorsque pris en charge ;
+- débit vidéo de 4 Mbit/s ;
+- tampon vidéo minimal lorsque pris en charge ;
+- audio désactivé.
+
+Pour une image plus détaillée :
+
+```bash
+flipex-monitor --display 1600x900/160 --fps 30 --bit-rate 6M
+```
+
+Pour privilégier la fluidité :
+
+```bash
+flipex-monitor --display 1280x720/160 --fps 25 --bit-rate 3M
 ```
 
 ## Prérequis
 
 Sur le Z Flip 6 :
 
-1. Installer et configurer l'application Android officielle [FlipEx](https://github.com/Vedjamkar/flipex).
+1. Installer et configurer l'application Android [FlipEx](https://github.com/Vedjamkar/flipex).
 2. Activer les options développeur et le débogage USB.
-3. Déverrouiller le téléphone, brancher le câble USB-C et accepter l'empreinte ADB.
+3. Déverrouiller le téléphone et autoriser l'ordinateur ADB.
 
 Sur le Chromebook Linux (Debian/Ubuntu ARM64) :
 
@@ -46,113 +94,60 @@ sudo apt update
 sudo apt install adb scrcpy bash
 ```
 
-Le Chromebook doit disposer d'une session graphique Linux (Wayland ou X11) pour ouvrir scrcpy. Le câble USB-C transporte ici ADB et la vidéo compressée, pas une entrée HDMI native.
+Une version de scrcpy proposant `--new-display`, `--mouse` et `--keyboard` est nécessaire. Le lanceur vérifie les options disponibles au démarrage et affiche une erreur si elles manquent. `libnotify-bin` ou `kdialog` est facultatif pour les notifications de bureau.
 
-## Démarrage
+Le Chromebook doit disposer d'une session graphique Linux (Wayland ou X11). Le câble USB-C transporte ici ADB et le flux vidéo compressé ; il ne transforme pas le Chromebook en moniteur HDMI natif.
+
+## Installation
 
 Depuis la racine du dépôt :
 
 ```bash
-chmod +x scripts/flipex-monitor.sh
+chmod +x scripts/flipex-monitor.sh scripts/install-system.sh
 ./scripts/flipex-monitor.sh --check
 ./scripts/flipex-monitor.sh --list
-./scripts/flipex-monitor.sh
-```
-
-Pour installer le lanceur dans le menu des applications Debian :
-
-```bash
 bash scripts/install-system.sh
 ```
 
-Ensuite ouvre **FlipEx Monitor** depuis le menu ou lance `flipex-monitor` dans un terminal.
+Le script d'installation place `flipex-monitor` dans `/usr/local/bin` et l'entrée de menu dans `/usr/share/applications`. Il utilise `sudo` si nécessaire. Ouvre ensuite **FlipEx Monitor — Connexion** dans le menu.
 
-Si plusieurs appareils ADB sont présents :
-
-```bash
-./scripts/flipex-monitor.sh --serial NUMERO_ADB
-```
-
-## Souris et clavier du Chromebook
-
-Le mode par défaut utilise de vrais périphériques HID Android :
-
-- `--mouse=uhid` : DeX reçoit une vraie souris. C'est le mode recommandé pour les barres de titre, le déplacement et le redimensionnement des fenêtres.
-- `--keyboard=uhid` : DeX reçoit un vrai clavier physique, avec les caractères correspondant à la disposition configurée sur le téléphone.
-
-**Pointeur capturé :** en mode UHID, scrcpy capture le pointeur quand sa fenêtre est active. Appuie sur **Alt gauche** pour rendre la souris au Chromebook ; clique à nouveau dans DeX pour la reprendre.
-
-**Clavier AZERTY :** configure une seule fois le clavier physique Android en Français (AZERTY) dans Paramètres → Gestion globale / Système → Clavier physique. La page peut aussi être ouverte avec :
+## Options pratiques
 
 ```bash
-adb shell am start -a android.settings.HARD_KEYBOARD_SETTINGS
+flipex-monitor --help
+flipex-monitor --check
+flipex-monitor --list
+flipex-monitor --display 1600x900/160 --fps 30 --bit-rate 6M
+flipex-monitor --mouse uhid
+flipex-monitor --display-mode overlay
+flipex-monitor --restore
 ```
 
-Si les clics ne répondent toujours pas sur le téléphone, certaines versions Android exigent l'option développeur **USB debugging (Security settings) / Allow granting permissions and simulating input via USB debugging**, puis un redémarrage.
-
-### Alternative : pointeur sans capture
-
-Pour essayer le mode souris SDK, où le pointeur est dessiné par le Chromebook et reste plus fluide à l'écran :
+Si plusieurs appareils ADB sont connectés :
 
 ```bash
-./scripts/flipex-monitor.sh --mouse sdk
+flipex-monitor --serial NUMERO_ADB
 ```
 
-Sur les versions récentes de One UI, le mode SDK peut être moins adapté aux barres de titre DeX : certains clics sont interprétés comme des gestes tactiles. Reviens à `--mouse uhid` pour déplacer et redimensionner les fenêtres.
-
-## Android 17 / API 37 : mode d'écran automatique
-
-Sur Android 17 / API 37+, le lanceur choisit par défaut un **écran overlay Android** et le scrcpy par `--display-id`. Ce contournement vise le changement de comportement des fenêtres de bureau sur les nouveaux écrans virtuels standards : l'écran overlay est présenté à Android comme un affichage secondaire externe.
-
-- `--display-mode auto` : recommandé ; choisit overlay sur API 37+ et nouvel écran virtuel sur les versions plus anciennes.
-- `--display-mode virtual` : force le nouvel écran virtuel scrcpy.
-- `--display-mode overlay` : force l'écran overlay.
-
-L'overlay peut afficher une petite prévisualisation de DeX sur l'écran du téléphone. Sa résolution est fixe pendant la session. Le lanceur mémorise la valeur précédente de `overlay_display_devices` et la restaure à la fermeture normale de scrcpy.
-
-## Réduire encore les saccades
-
-Utilise d'abord le câble USB, garde le téléphone déverrouillé et laisse son écran allumé. Puis :
-
-```bash
-./scripts/flipex-monitor.sh --display 1280x720/160 --fps 25 --bit-rate 3M
-```
-
-Évite le Wi-Fi pour le premier diagnostic. Si l'image est fluide mais que le pointeur semble lent, teste `--mouse sdk`. Si le pointeur est fluide mais que les fenêtres ne se déplacent pas correctement, reviens à `--mouse uhid`.
-
-## Restaurer les réglages Android
-
-```bash
-./scripts/flipex-monitor.sh --restore
-```
-
-Cette commande remet à 0 les trois réglages du mode bureau gérés par le lanceur et supprime `overlay_display_devices`. Elle ne désinstalle pas FlipEx. Pour restaurer aussi les réglages propres à FlipEx, utiliser **Restore stock settings** dans l'application Android.
-
-## Limites connues
-
-- Le couple Lenovo Duet ARM64 / Samsung Z Flip 6 Android 17 n'a pas encore été revalidé après l'activation du contrôle HID.
-- L'écran overlay dépend du comportement One UI / Android et peut ne pas être nécessaire sur les versions antérieures à Android 17.
-- Le flux vidéo dépend du décodeur scrcpy disponible sur la session Linux du Chromebook ; la baisse de résolution réduit la charge, mais ne peut pas garantir une fluidité parfaite sur tous les pilotes graphiques.
-- Pas encore de paquet .deb/AppImage ARM64 ; le lanceur utilise les paquets ADB et scrcpy de la distribution.
+La commande de restauration remet à zéro les trois réglages du mode bureau gérés par le lanceur et supprime le réglage overlay. Elle ne désinstalle pas FlipEx. Pour restaurer aussi les réglages propres à FlipEx, utiliser **Restore stock settings** dans l'application Android.
 
 ## Tests et développement
+
+Depuis la racine du dépôt :
 
 ```bash
 bash -n scripts/flipex-monitor.sh
 bash -n scripts/install-system.sh
-shellcheck scripts/flipex-monitor.sh scripts/install-system.sh
 bash tests/fake-tools.sh
 ```
 
-GitHub Actions exécute ces contrôles avec des outils Android simulés, notamment les chemins d'affichage Android 16 et Android 17.
+Le test simulé vérifie le mode écran virtuel + souris SDK par défaut, le mode souris HID optionnel et la restauration de l'overlay. Il ne remplace pas un essai sur le Z Flip 6 réel.
 
 ## Références techniques
 
 - [Projet FlipEx Android et client de bureau](https://github.com/Vedjamkar/flipex)
-- [Documentation scrcpy — souris HID](https://github.com/Genymobile/scrcpy/blob/master/doc/mouse.md)
-- [Documentation scrcpy — clavier HID](https://github.com/Genymobile/scrcpy/blob/master/doc/keyboard.md)
-- [Documentation scrcpy — vidéo et qualité](https://github.com/Genymobile/scrcpy/blob/master/doc/video.md)
+- [Documentation scrcpy — souris](https://github.com/Genymobile/scrcpy/blob/master/doc/mouse.md)
+- [Documentation scrcpy — clavier](https://github.com/Genymobile/scrcpy/blob/master/doc/keyboard.md)
 - [Options scrcpy](https://github.com/Genymobile/scrcpy/blob/master/app/scrcpy.1)
-- [Référence technique récente : dex-script](https://github.com/ErenKaynak/dex-script)
 
 FlipdexOS Monitor est un projet indépendant et n'est ni développé, ni approuvé par Samsung ou par les auteurs de FlipEx.
