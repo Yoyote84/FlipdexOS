@@ -21,7 +21,20 @@ OVERLAY_PREVIOUS=""
 OVERLAY_ACTIVE=0
 SCRCPY_HELP=""
 
-die() { printf 'Erreur : %s\n' "$*" >&2; exit 1; }
+gui_notify() {
+  local urgency="${1:-normal}" title="${2:-FlipEx Monitor}" message="${3:-}"
+  [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] || return 0
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send --app-name="FlipEx Monitor" --urgency="$urgency" "$title" "$message" >/dev/null 2>&1 || true
+  elif command -v kdialog >/dev/null 2>&1; then
+    kdialog --title="$title" --passivepopup "$message" 6 >/dev/null 2>&1 &
+  fi
+}
+die() {
+  printf 'Erreur : %s\n' "$*" >&2
+  gui_notify critical "FlipEx Monitor — connexion impossible" "$*"
+  exit 1
+}
 info() { printf '[FlipEx Monitor] %s\n' "$*"; }
 warn() { printf '[FlipEx Monitor] Attention : %s\n' "$*" >&2; }
 
@@ -41,9 +54,11 @@ Actions:
 Connexion et affichage:
   --serial SERIAL               Choisir un appareil ADB précis
   --display WxH[/DPI]           Résolution (défaut: 1280x720/160)
-  --display-mode auto|virtual|overlay
-                                auto choisit l'overlay sur Android 17/API 37+
-  --mouse uhid|sdk              uhid = vraie souris DeX; sdk = pointeur dessiné sur le PC
+  --display-mode virtual|overlay
+                                virtual = écran virtuel scrcpy (défaut)
+                                overlay = écran secondaire Android alternatif
+  --mouse sdk|uhid              sdk = curseur Chromebook non capturé (défaut)
+                                uhid = souris HID Android, pointeur capturé
   --keyboard uhid|sdk           uhid = vrai clavier physique (AZERTY à configurer sur Android)
   --fps N                       Images/s, 1 à 60 (défaut: 30)
   --bit-rate RATE               Débit vidéo, ex. 4M, 6M ou 8M (défaut: 4M)
@@ -54,9 +69,10 @@ Exemples:
   flipex-monitor --mouse sdk
   flipex-monitor --display-mode virtual
 
-Dans la fenêtre DeX, Alt gauche libère/reprend le pointeur.
+Avec --mouse uhid, Alt gauche libère/reprend le pointeur.
+En mode sdk (défaut), le pavé tactile reste libre sur le Chromebook.
 Le clavier du Chromebook est transmis au téléphone.
-Fermer scrcpy arrête le flux. Sur Android 17, l'overlay créé est restauré.
+Fermer scrcpy arrête le flux. L'overlay facultatif est restauré à la fermeture.
 EOF
 }
 
@@ -237,9 +253,16 @@ start_monitor() {
   fi
 
   args+=("--mouse=$MOUSE_MODE" "--keyboard=$KEYBOARD_MODE")
-  if [[ "$MOUSE_MODE" == "uhid" ]]; then
-    if has_scrcpy_option "--mouse-bind"; then args+=(--mouse-bind=++++:bhsn); fi
-    if has_scrcpy_option "--shortcut-mod"; then args+=(--shortcut-mod=lalt); fi
+  if has_scrcpy_option "--mouse-bind"; then
+    if [[ "$MOUSE_MODE" == "sdk" ]]; then
+      # Transmit secondary clicks instead of mapping them to Android shortcuts.
+      args+=(--mouse-bind=++++:++++)
+    else
+      args+=(--mouse-bind=++++:bhsn)
+    fi
+  fi
+  if [[ "$MOUSE_MODE" == "uhid" ]] && has_scrcpy_option "--shortcut-mod"; then
+    args+=(--shortcut-mod=lalt)
   fi
   args+=("--max-fps=$FPS" "--video-bit-rate=$BIT_RATE")
   if has_scrcpy_option "--video-codec"; then args+=(--video-codec=h264); fi
@@ -253,8 +276,9 @@ start_monitor() {
   info "Mode écran : $selected_display"
   info "Résolution : $DISPLAY_SPEC · $FPS images/s · $BIT_RATE"
   info "Souris : $MOUSE_MODE · Clavier : $KEYBOARD_MODE"
-  if [[ "$MOUSE_MODE" == "sdk" ]]; then info "Mode souris SDK : le pavé tactile du Chromebook reste libre, sans capture du pointeur."; fi
+  if [[ "$MOUSE_MODE" == "sdk" ]]; then info "Mode SDK : le curseur reste sur le Chromebook et les clics sont transmis à Android."; fi
   if [[ "$KEYBOARD_MODE" == "uhid" ]]; then info "Configure une fois le clavier physique Android en Français (AZERTY)."; fi
+  gui_notify normal "Téléphone connecté" "FlipEx est lancé. Le bureau va s'ouvrir sur le Chromebook."
   info "Démarrage de scrcpy…"
 
   "$SCRCPY_BIN" "${args[@]}"
