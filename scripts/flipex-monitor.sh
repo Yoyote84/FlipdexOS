@@ -282,7 +282,11 @@ start_monitor() {
   gui_notify normal "Téléphone connecté" "FlipEx est lancé. Le bureau va s'ouvrir sur le Chromebook."
   info "Démarrage de scrcpy…"
 
-  "$SCRCPY_BIN" "${args[@]}"
+  local scrcpy_status=0
+  "$SCRCPY_BIN" "${args[@]}" || scrcpy_status=$?
+  if (( scrcpy_status != 0 )); then
+    die "scrcpy s'est arrêté avec le code $scrcpy_status. Vérifie le câble USB, l'autorisation ADB et la version de scrcpy."
+  fi
 }
 
 while (($#)); do
