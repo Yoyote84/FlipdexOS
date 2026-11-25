@@ -107,7 +107,7 @@ fi
 
 # Android 16: virtual display path and SDK mouse fallback remain selectable.
 export FAKE_SDK=36
-"$ROOT/scripts/flipex-monitor.sh" --display-mode virtual --mouse sdk --display 1600x900/160 --fps 25 --bit-rate 6M
+bash "$ROOT/scripts/flipex-monitor.sh" --display-mode virtual --mouse sdk --display 1600x900/160 --fps 25 --bit-rate 6M
 grep -Fxq -- '--new-display=1600x900/160' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
