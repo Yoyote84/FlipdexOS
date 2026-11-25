@@ -213,6 +213,6 @@ case "$ACTION" in
   check) check_tools ;;
   list) list_devices ;;
   restore) restore_settings ;;
-  start) validate_options; start_monitor ;;
+  start) start_monitor ;;
   *) die "action interne inconnue." ;;
 esac
