@@ -33,6 +33,7 @@ Actions:
   --check                 Vérifier ADB, scrcpy et les options requises
   --list                  Lister les appareils ADB détectés
   --restore               Remettre à 0 les trois réglages Android utilisés
+  --version               Afficher la version
   -h, --help              Afficher cette aide
 
 Options:
@@ -139,12 +140,13 @@ restore_settings() {
 
 validate_options() {
   [[ "$DISPLAY_SPEC" =~ ^[0-9]{3,5}x[0-9]{3,5}(/[0-9]{2,4})?$ ]] || die "résolution invalide : $DISPLAY_SPEC (exemple : 1920x1080/160)."
-  [[ "$FPS" =~ ^[0-9]+$ ]] || die "FPS invalide."
-  (( FPS >= 1 && FPS <= 60 )) || die "FPS doit être compris entre 1 et 60."
+  [[ "$FPS" =~ ^[1-9][0-9]?$ ]] || die "FPS invalide : utilise un entier de 1 à 60."
+  (( FPS <= 60 )) || die "FPS doit être compris entre 1 et 60."
   [[ "$BIT_RATE" =~ ^[1-9][0-9]*[KMG]$ ]] || die "débit invalide : utilise par exemple 8M ou 4000K."
 }
 
 start_monitor() {
+  validate_options
   check_tools
   select_device
 
@@ -166,7 +168,6 @@ start_monitor() {
     die "Android n'a pas pu démarrer FlipEx. Vérifie que l'application est installée et configurée."
   fi
 
-  validate_options
   info "Ouverture de l'écran virtuel $DISPLAY_SPEC dans scrcpy…"
   info "MODE LECTURE SEULE ACTIF — --no-control ; aucun contrôle souris/clavier."
   info "Ferme la fenêtre scrcpy pour arrêter l'affichage."
@@ -189,6 +190,7 @@ while (($#)); do
     --check) ACTION="check"; shift ;;
     --list) ACTION="list"; shift ;;
     --restore) ACTION="restore"; shift ;;
+    --version) printf 'FlipEx Monitor %s\n' "$VERSION"; exit 0 ;;
     --serial)
       (($# >= 2)) || die "--serial nécessite une valeur."
       SERIAL="$2"; shift 2 ;;
