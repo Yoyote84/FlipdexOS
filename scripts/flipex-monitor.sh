@@ -3,7 +3,7 @@
 # DeX virtual/overlay display with Chromebook mouse + keyboard input.
 set -Eeuo pipefail
 
-VERSION="0.3.0"
+VERSION="0.4.0"
 ADB_BIN="${ADB:-adb}"
 SCRCPY_BIN="${SCRCPY:-scrcpy}"
 SERIAL="${ANDROID_SERIAL:-}"
@@ -91,8 +91,8 @@ check_tools() {
   need_command "$SCRCPY_BIN"
   SCRCPY_HELP="$(scrcpy_help)"
   require_scrcpy_option "--new-display"
-  require_scrcpy_option "--display-id"
   require_scrcpy_option "--mouse"
+  require_scrcpy_option "--mouse-bind"
   require_scrcpy_option "--keyboard"
   require_scrcpy_option "--video-bit-rate"
   require_scrcpy_option "--max-fps"
@@ -236,6 +236,7 @@ start_monitor() {
   local -a args
   args=(--serial="$SERIAL")
   if [[ "$selected_display" == "overlay" ]]; then
+    require_scrcpy_option "--display-id"
     if ! overlay_create "$DISPLAY_SPEC"; then
       if [[ "$DISPLAY_MODE" == "overlay" ]]; then die "Impossible de créer l'écran overlay demandé."; fi
       overlay_destroy
