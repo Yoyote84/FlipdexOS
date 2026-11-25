@@ -225,6 +225,7 @@ start_monitor() {
   if [[ "$selected_display" == "overlay" ]]; then
     if ! overlay_create "$DISPLAY_SPEC"; then
       if [[ "$DISPLAY_MODE" == "overlay" ]]; then die "Impossible de créer l'écran overlay demandé."; fi
+      overlay_destroy
       warn "Retour au nouvel écran virtuel scrcpy. Sur Android 17, les barres de fenêtres DeX peuvent ne pas fonctionner."
       selected_display="virtual"
     else
