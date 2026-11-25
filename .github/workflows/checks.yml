@@ -27,13 +27,18 @@ jobs:
         run: |
           bash -n scripts/flipex-monitor.sh
           bash -n scripts/install-system.sh
+          bash -n tests/fake-tools.sh
 
       - name: Analyser les scripts
         run: |
           shellcheck scripts/flipex-monitor.sh
           shellcheck scripts/install-system.sh
+          shellcheck tests/fake-tools.sh
 
-      - name: Vérifier les commandes sans périphérique connecté
+      - name: Tester les deux chemins d'affichage
+        run: bash tests/fake-tools.sh
+
+      - name: Vérifier l'aide et les options
         run: |
           bash scripts/flipex-monitor.sh --help
           bash scripts/flipex-monitor.sh --version
