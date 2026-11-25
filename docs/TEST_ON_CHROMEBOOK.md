@@ -44,9 +44,9 @@ Le Z Flip doit apparaître avec l'état `device`, pas `unauthorized`.
 Depuis la racine du dépôt :
 
 ```bash
-./scripts/flipex-monitor.sh --check
-./scripts/flipex-monitor.sh --list
-./scripts/flipex-monitor.sh
+bash scripts/flipex-monitor.sh --check
+bash scripts/flipex-monitor.sh --list
+bash scripts/flipex-monitor.sh
 ```
 
 Le profil initial est 1280 × 720, 30 images/s et 4 Mbit/s. Le lanceur détecte le niveau d'API Android : nouvel écran virtuel sur les versions antérieures à Android 17, overlay sur API 37+.
@@ -62,7 +62,7 @@ Le mode par défaut est `uhid`. Clique dans la fenêtre DeX : le pointeur du Chr
 Pour essayer un pointeur toujours dessiné côté Chromebook :
 
 ```bash
-./scripts/flipex-monitor.sh --mouse sdk
+bash scripts/flipex-monitor.sh --mouse sdk
 ```
 
 Le mode SDK peut être plus fluide, mais peut mal gérer les barres de titre sur les versions récentes de One UI.
@@ -84,13 +84,13 @@ Si Android refuse l'injection clavier/souris, certaines versions nécessitent l'
 Utilise le câble USB et garde le téléphone déverrouillé et éveillé. Commence par le profil léger :
 
 ```bash
-./scripts/flipex-monitor.sh --display 1280x720/160 --fps 25 --bit-rate 3M
+bash scripts/flipex-monitor.sh --display 1280x720/160 --fps 25 --bit-rate 3M
 ```
 
 Pour une image plus nette, essaie :
 
 ```bash
-./scripts/flipex-monitor.sh --display 1600x900/160 --fps 30 --bit-rate 6M
+bash scripts/flipex-monitor.sh --display 1600x900/160 --fps 30 --bit-rate 6M
 ```
 
 Si le pointeur lag mais l'image est fluide, compare `--mouse sdk` et `--mouse uhid`. Si les fenêtres DeX ne peuvent pas être déplacées, repasse à `uhid`.
@@ -102,7 +102,7 @@ Ferme la fenêtre scrcpy pour arrêter le flux. En mode overlay, le lanceur rest
 Pour remettre à 0 les trois réglages globaux de mode bureau :
 
 ```bash
-./scripts/flipex-monitor.sh --restore
+bash scripts/flipex-monitor.sh --restore
 ```
 
 ## Rapport de test
@@ -115,7 +115,7 @@ cat /etc/os-release
 adb devices -l
 scrcpy --version
 scrcpy --help | grep -E -- '--new-display|--display-id|--mouse|--keyboard|--video-buffer'
-./scripts/flipex-monitor.sh --check
+bash scripts/flipex-monitor.sh --check
 ```
 
 Précise si le souci concerne la détection USB, l'image, le pointeur, le clavier, ou les fenêtres DeX. Ne publie pas le numéro de série ADB ni l'adresse IP privée.
