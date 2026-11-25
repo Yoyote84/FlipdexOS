@@ -33,6 +33,15 @@ jobs:
           shellcheck scripts/flipex-monitor.sh
           shellcheck scripts/install-system.sh
 
-      - name: Vérifier l'aide sans périphérique connecté
+      - name: Vérifier les commandes sans périphérique connecté
         run: |
           bash scripts/flipex-monitor.sh --help
+          bash scripts/flipex-monitor.sh --version
+          if bash scripts/flipex-monitor.sh --fps 61; then
+            echo "Une valeur FPS invalide a été acceptée." >&2
+            exit 1
+          fi
+          if bash scripts/flipex-monitor.sh --display invalide; then
+            echo "Une résolution invalide a été acceptée." >&2
+            exit 1
+          fi
