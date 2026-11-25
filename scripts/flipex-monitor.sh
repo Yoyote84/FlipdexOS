@@ -145,12 +145,12 @@ overlay_create() {
   local i=0 id=""
   OVERLAY_PREVIOUS="$(adb_phone shell settings get global overlay_display_devices 2>/dev/null | tr -d '\r' || true)"
   adb_phone shell settings put global overlay_display_devices "$geometry" >/dev/null
+  OVERLAY_ACTIVE=1
 
   while (( i < 40 )); do
     id="$(adb_phone shell dumpsys display 2>/dev/null | grep 'type OVERLAY' | sed -n 's/.*displayId \([0-9][0-9]*\),.*/\1/p' | head -n 1 || true)"
     if [[ -n "$id" ]]; then
       OVERLAY_ID="$id"
-      OVERLAY_ACTIVE=1
       if adb_phone shell wm set-display-windowing-mode -d "$OVERLAY_ID" 5 >/dev/null 2>&1; then
         info "Mode fenêtré DeX activé sur l'écran Android $OVERLAY_ID."
       else
@@ -191,6 +191,8 @@ restore_settings() {
 
 start_monitor() {
   validate_options
+  trap cleanup EXIT
+  trap 'exit 130' INT TERM
   check_tools
   select_device
   detect_android_version
@@ -255,8 +257,6 @@ start_monitor() {
   if [[ "$KEYBOARD_MODE" == "uhid" ]]; then info "Configure une fois le clavier physique Android en Français (AZERTY)."; fi
   info "Démarrage de scrcpy…"
 
-  trap cleanup EXIT
-  trap 'exit 130' INT TERM
   "$SCRCPY_BIN" "${args[@]}"
 }
 
