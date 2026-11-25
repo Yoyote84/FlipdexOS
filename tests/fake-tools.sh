@@ -92,7 +92,7 @@ export ANDROID_SERIAL=FAKE123
 
 # Android 17: automatic mode must create an overlay display, pass keyboard/mouse controls,
 # and restore the previous overlay setting after scrcpy exits.
-"$ROOT/scripts/flipex-monitor.sh"
+bash "$ROOT/scripts/flipex-monitor.sh"
 grep -Fxq -- '--display-id=2' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
