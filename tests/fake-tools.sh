@@ -94,6 +94,7 @@ export ANDROID_SERIAL=FAKE123
 bash "$ROOT/scripts/flipex-monitor.sh"
 grep -Fxq -- '--new-display=1280x720/160' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
+grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--video-buffer=0' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=30' "$FAKE_ARGS"
@@ -104,11 +105,13 @@ if grep -Fxq -- '--no-control' "$FAKE_ARGS"; then
 fi
 [[ "$(cat "$FAKE_STATE")" == "null" ]]
 
-# Android 16: virtual display path and SDK mouse fallback remain selectable.
+# Android 16: virtual display path and physical UHID mouse remain selectable.
 export FAKE_SDK=36
 bash "$ROOT/scripts/flipex-monitor.sh" --display-mode virtual --mouse uhid --display 1600x900/160 --fps 25 --bit-rate 6M
 grep -Fxq -- '--new-display=1600x900/160' "$FAKE_ARGS"
-grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
+grep -Fxq -- '--mouse=uhid' "$FAKE_ARGS"
+grep -Fxq -- '--mouse-bind=++++:bhsn' "$FAKE_ARGS"
+grep -Fxq -- '--shortcut-mod=lalt' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=25' "$FAKE_ARGS"
 grep -Fxq -- '--video-bit-rate=6M' "$FAKE_ARGS"
@@ -116,5 +119,15 @@ if grep -Fq -- '--display-id=' "$FAKE_ARGS"; then
   printf 'Le mode virtuel ne doit pas forcer un display-id overlay.\n' >&2
   exit 1
 fi
+
+# Optional Android overlay remains available and must be restored after scrcpy exits.
+bash "$ROOT/scripts/flipex-monitor.sh" --display-mode overlay
+grep -Fxq -- '--display-id=2' "$FAKE_ARGS"
+if grep -Fq -- '--new-display=' "$FAKE_ARGS"; then
+  printf 'Le mode overlay ne doit pas créer un nouvel écran virtuel.
+' >&2
+  exit 1
+fi
+[[ "$(cat "$FAKE_STATE")" == "null" ]]
 
 printf 'Tous les tests FlipEx Monitor sont passés.\n'
