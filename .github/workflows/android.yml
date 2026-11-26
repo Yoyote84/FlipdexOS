@@ -1,0 +1,60 @@
+name: Construire l'APK Android FlipdexOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Compiler et tester l'APK Z Flip6
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer Gradle 9.6
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Installer Android SDK 37
+        uses: android-actions/setup-android@v3
+
+      - name: Installer les composants Android
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platforms;android-37" "build-tools;37.0.0"
+
+      - name: Tester les règles d'accès système
+        run: gradle --no-daemon :app:testDebugUnitTest
+
+      - name: Compiler l'APK debug
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Vérifier et calculer la somme SHA-256
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk > app/build/outputs/apk/debug/app-debug.apk.sha256
+          sha256sum --check app/build/outputs/apk/debug/app-debug.apk.sha256
+
+      - name: Publier l'APK debug de test
+        uses: actions/upload-artifact@v4
+        with:
+          name: flipdexos-android-debug-apk
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/debug/app-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 30

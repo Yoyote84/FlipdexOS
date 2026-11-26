@@ -28,21 +28,6 @@ jobs:
           manifest-path: io.github.yoyote84.flipdexos.yml
           arch: aarch64
           branch: stable
-          upload-artifact: false
+          upload-artifact: true
+          artifact-name: flipdexos-monitor-flatpak-aarch64
           verbose: true
-
-      - name: Vérifier et calculer la somme SHA-256
-        run: |
-          test -s flipdexos-monitor-aarch64.flatpak
-          sha256sum flipdexos-monitor-aarch64.flatpak > flipdexos-monitor-aarch64.flatpak.sha256
-          sha256sum --check flipdexos-monitor-aarch64.flatpak.sha256
-
-      - name: Publier le paquet et sa somme
-        uses: actions/upload-artifact@v4
-        with:
-          name: flipdexos-monitor-flatpak-aarch64
-          path: |
-            flipdexos-monitor-aarch64.flatpak
-            flipdexos-monitor-aarch64.flatpak.sha256
-          if-no-files-found: error
-          retention-days: 14

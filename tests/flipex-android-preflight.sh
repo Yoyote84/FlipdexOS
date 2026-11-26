@@ -42,8 +42,8 @@ case "${1:-}" in
             moe.shizuku.privileged.api)
               [[ "${FAKE_SHIZUKU:-present}" == "present" ]] && printf 'package:/data/app/shizuku/base.apk\n'
               ;;
-            dev.ved.flipdex)
-              [[ "${FAKE_FLIPEX:-present}" == "present" ]] && printf 'package:/data/app/flipex/base.apk\n'
+            io.github.yoyote84.flipdexos)
+              [[ "${FAKE_FLIPDEX:-present}" == "present" ]] && printf 'package:/data/app/flipex/base.apk\n'
               ;;
           esac
         fi
@@ -54,7 +54,7 @@ case "${1:-}" in
             moe.shizuku.privileged.api)
               printf '    versionCode=13600 minSdk=23 targetSdk=35\n    versionName=13.6.0\n'
               ;;
-            dev.ved.flipdex)
+            io.github.yoyote84.flipdexos)
               printf '    versionCode=7 minSdk=31 targetSdk=36\n    versionName=0.3.4\n'
               ;;
           esac
@@ -82,14 +82,14 @@ OUTPUT="$(bash "$ROOT/scripts/diagnose-flipex-android.sh")"
 grep -Fq 'Android : 17 (API 37)' <<<"$OUTPUT"
 grep -Fq 'One UI : 9.0' <<<"$OUTPUT"
 grep -Fq 'Application : installée (13.6.0)' <<<"$OUTPUT"
-grep -Fq 'Application : installée (0.3.4)' <<<"$OUTPUT"
+grep -Fq 'Application : installée (0.1.0-alpha01)' <<<"$OUTPUT"
 grep -Fq "targetSdk de l'APK installé : 36" <<<"$OUTPUT"
 grep -Fq 'Lecture seule' <<<"$OUTPUT"
 grep -Fq 'Processus serveur : détecté' <<<"$OUTPUT"
 
 # The diagnostic must remain useful when optional packages are absent.
 export FAKE_SHIZUKU=missing
-export FAKE_FLIPEX=missing
+export FAKE_FLIPDEX=missing
 OUTPUT="$(bash "$ROOT/scripts/diagnose-flipex-android.sh")"
 grep -Fq 'Application : absente' <<<"$OUTPUT"
 
@@ -100,4 +100,4 @@ if bash "$ROOT/scripts/diagnose-flipex-android.sh" >/dev/null 2>&1; then
   exit 1
 fi
 
-printf 'Tous les tests du diagnostic Android FlipEx sont passés.\n'
+printf 'Tous les tests du diagnostic Android FlipdexOS sont passés.\n'

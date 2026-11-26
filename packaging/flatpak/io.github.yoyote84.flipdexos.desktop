@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=FlipdexOS — FlipEx Monitor
+Name=FlipdexOS — Bureau Android
 GenericName=Moniteur DeX Android
 Comment=Ouvrir le bureau virtuel du Galaxy Z Flip6 dans Plasma
 Exec=flipdex-monitor

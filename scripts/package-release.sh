@@ -108,8 +108,7 @@ EOF
   cd "$STAGE"
   find . -type f ! -name SHA256SUMS -print0 \
     | LC_ALL=C sort -z \
-    | xargs -0 sha256sum > "$TMP_DIR/SHA256SUMS"
-  mv "$TMP_DIR/SHA256SUMS" SHA256SUMS
+    | xargs -0 sha256sum > SHA256SUMS
   sha256sum --check SHA256SUMS >/dev/null
 )
 

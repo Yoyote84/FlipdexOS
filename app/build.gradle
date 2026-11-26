@@ -1,0 +1,41 @@
+plugins {
+    id "com.android.application"
+}
+android {
+    namespace "io.github.yoyote84.flipdexos"
+    compileSdk 37
+    defaultConfig {
+        applicationId "io.github.yoyote84.flipdexos"
+        minSdk 31
+        targetSdk 36
+        versionCode 1
+        versionName "0.1.0-alpha01"
+    }
+    buildFeatures {
+        aidl true
+        buildConfig true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix ""
+            versionNameSuffix "-debug"
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+dependencies {
+    // MIT-licensed Shizuku client API.
+    implementation "dev.rikka.shizuku:api:13.1.5"
+    implementation "dev.rikka.shizuku:provider:13.1.5"
+    testImplementation "junit:junit:4.13.2"
+}

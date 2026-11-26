@@ -1,102 +1,82 @@
-# FlipdexOS — étape 4/5 : paquets et compilation
+# FlipdexOS — étape 4/5 : application Android et paquets
 
 Date : 2026-11-26
 
-## Résumé et périmètre
+## Livrables et appareils
 
-Les livrables attendus sont séparés :
+- **APK Android** : Samsung Galaxy Z Flip6, Android 17 / One UI 9.
+- **Flatpak ARM64 + client Linux** : Lenovo Chromebook Duet MediaTek Helio P60T, postmarketOS/Alpine et Plasma Desktop.
 
-- **APK Android : Samsung Galaxy Z Flip6**, pour FlipEx et son fonctionnement DeX.
-- **Flatpak Linux ARM64 : Lenovo Chromebook Duet**, MediaTek Helio P60T, postmarketOS et Plasma Desktop.
+Les deux programmes sont distincts : le téléphone fournit l'application compagnon et le lanceur du bureau Android ; le Chromebook crée et capture l'écran virtuel à l'aide d'ADB et scrcpy.
 
-Le dépôt FlipdexOS contient aujourd'hui le client Linux, les scripts de diagnostic et de pilotage, mais aucun module Android `app/` à compiler. Le Flatpak est donc traité directement dans ce dépôt ; la génération de l'APK dépend toujours du projet Android tiers FlipEx.
+## Application Android originale
 
-## Flatpak Chromebook
+Le module Android est maintenant intégré dans `app/`, identifiant :
 
-### Choix technique
-
-Le paquet est ciblé sur `aarch64` et utilise `org.freedesktop.Platform` / `org.freedesktop.Sdk` 26.08. Cette branche est la version Freedesktop actuelle en novembre 2026 et sa maintenance est prévue jusqu'en septembre 2028.
-
-Le Flatpak reste volontairement léger : il embarque le client FlipdexOS et son lanceur, mais réutilise sur le système hôte les exécutables `adb`, `scrcpy`, `kscreen-doctor`, `wlr-randr`, `xrandr` et les outils de notification. Sur ce Chromebook, ADB doit accéder au bus USB du téléphone et scrcpy doit ouvrir une fenêtre native Plasma ; compiler puis exécuter ces deux outils dans un environnement isolé différent compliquerait inutilement l'accès USB, l'affichage et la gestion du serveur ADB.
-
-Le lanceur utilise `flatpak-spawn --host` avec une liste blanche fixe de commandes. Le manifeste accorde uniquement `--talk-name=org.freedesktop.Flatpak` pour ce pont. Il n'accorde pas `--device=all`, `--filesystem=home` ni l'accès réseau dans le bac à sable. Les fichiers d'état de l'application restent dans l'espace de configuration propre au Flatpak.
-
-**Limite de sécurité importante :** le droit de parler au service `org.freedesktop.Flatpak` permet techniquement à une application compromise de tenter de lancer des commandes hôte. Le lanceur fourni limite les exécutables qu'il relaie, mais ce contrôle n'est pas une frontière de sécurité contre du code malveillant dans l'application. Ce paquet est donc destiné à une installation locale de confiance ; il n'est pas prêt pour Flathub. Une publication publique devrait remplacer ce mécanisme par une API/permission hôte plus restrictive ou une intégration native dédiée.
-
-### Compilation et installation sur le Chromebook
-
-Prérequis : Flatpak et flatpak-builder installés sur postmarketOS. ADB et scrcpy doivent déjà être présents sur l'hôte. La procédure de référence depuis le dépôt est :
-
-```bash
-bash scripts/install-scrcpy-latest.sh
-bash scripts/build-flatpak.sh --install
+```
+io.github.yoyote84.flipdexos
 ```
 
-Le script vérifie l'architecture Flatpak `aarch64`, ajoute Flathub si nécessaire, résout le runtime et le SDK 26.08, construit le bundle, vérifie la somme SHA-256 et l'installe dans le profil de l'utilisateur.
+### Fonctions livrées dans le premier socle
 
-Pour seulement produire le paquet :
+- `MainActivity` : panneau compagnon, modèle/version Android, état Binder Shizuku, demande d'autorisation et rapport du UserService.
+- `ShellUserService` + AIDL : service privilégié via Shizuku, vérification de l'UID et lecture de propriétés/réglages connus.
+- Liste blanche stricte : quatre propriétés système et trois réglages globaux autorisés ; aucune exécution shell arbitraire.
+- `DesktopActivity` : lanceur secondaire redimensionnable, liste des applications exposées par Android, recherche et ouverture d'une application sur le même écran via `ActivityOptions.setLaunchDisplayId()`.
+- Tests unitaires des listes blanches, des valeurs de réglage et du format de version One UI.
+- Workflow GitHub Actions Android : compilation `debug`, tests JUnit, génération SHA-256 et publication de l'APK de test.
 
-```bash
-bash scripts/build-flatpak.sh
-```
+Le client Chromebook a été mis à jour pour vérifier notre paquet Android et passer `--start-app=io.github.yoyote84.flipdexos/.desktop.DesktopActivity` à scrcpy. Il n'ouvre plus le panneau compagnon sur l'écran principal du téléphone avant de lancer le second écran.
 
-La sortie attendue est `dist/flipdexos-monitor-0.10.0-aarch64.flatpak` et son fichier `.sha256`. Le paquet apparaît ensuite dans le menu Plasma sous **FlipdexOS — FlipEx Monitor**. Le menu ouvre un terminal afin de conserver les diagnostics, puis le bureau virtuel scrcpy s'ouvre dans sa propre fenêtre.
+### Configuration de compilation
 
-### Validation automatisée
+- `compileSdk 37` pour Android 17.
+- `targetSdk 36` provisoire ; on ne relève pas ce niveau avant les tests des nouveaux comportements Android 17.
+- `minSdk 31`.
+- Android Gradle Plugin 9.4.0, Gradle 9.6.0, JDK 17.
+- Dépendance Shizuku API / Provider 13.1.5 sous licence MIT.
 
-- Test de syntaxe POSIX du lanceur et du pont hôte.
-- Vérification statique du manifeste, du runtime et des permissions.
-- Test simulé de la transmission des arguments à ADB par `flatpak-spawn`.
-- Vérification qu'un nom d'exécutable qui n'est pas dans la liste blanche est refusé.
-- Construction réelle du bundle par l'action officielle Flatpak GitHub sur un runner ARM64 natif (`ubuntu-24.04-arm`).
-- Vérification de la présence du bundle et calcul de son SHA-256 dans le workflow.
-- Publication du bundle et de sa somme comme artefact téléchargeable de la compilation CI.
+L'APK produite par CI est une version debug, signée avec la clé debug du runner. Elle peut servir à l'installation et aux essais, mais n'est pas encore une version de production signée par une clé privée contrôlée par l'utilisateur.
 
-La construction CI ne remplace pas le test USB/Plasma sur le Lenovo Duet réel.
+### Provenance du code
 
-## APK Android — Galaxy Z Flip6
+Aucun code source FlipEx n'est copié. La licence du dépôt FlipEx n'était pas déclarée dans les métadonnées GitHub lors de l'audit.
 
-### État vérifié du projet source
+Le projet `android-desk` est sous GPL-3.0 ; il a été consulté comme référence, sans copier ses fichiers source. scrcpy est Apache-2.0 et utilisé comme outil hôte externe. Shizuku-API est MIT et consommé comme bibliothèque Maven. Le code original de notre module Android est MIT. Voir [app/THIRD_PARTY_NOTICES.md](../app/THIRD_PARTY_NOTICES.md).
 
-Le dépôt officiel public [Vedjamkar/flipex](https://github.com/Vedjamkar/flipex), branche `main`, a été vérifié le 26 novembre 2026 :
+## Client Linux et Flatpak ARM64
 
-- commit courant : `6bfdeb9f779bf921e659baf614a08021bcb529ec`, version source `0.3.4` ;
-- dernière release GitHub publiée : `v0.3.0`, datée du 15 novembre 2026 ;
-- la propriété GitHub `license` est nulle et l'arborescence ne contient pas de fichier `LICENSE` ;
-- `app/build.gradle` déclare `compileSdk 36`, `targetSdk 36`, `minSdk 31`, Java 17 et Android Gradle Plugin 9.4.0 ;
-- le dépôt ne contient pas de Gradle Wrapper.
+Le client hôte garde le contrôle des sauvegardes/restaurations du mode bureau et du transport vidéo. Il démarre notre propre `DesktopActivity` directement sur l'écran virtuel scrcpy. L'écran principal du Z Flip6 reste indépendant.
 
-La disponibilité publique du code source n'est pas une autorisation de le modifier, de le redistribuer ou de republier un APK dérivé. FlipdexOS ne copie donc pas ce code tiers et ne fabrique pas un APK factice. L'APK `v0.3.0` existant n'est pas présenté comme une compilation à jour de la source `0.3.4`.
+Le Flatpak utilise Freedesktop 26.08 sur `aarch64`. ADB et scrcpy restent installés sur l'hôte pour accéder à l'USB et au compositeur Plasma. Le bridge `flatpak-spawn --host` est limité à une liste blanche fixe, mais l'accès D-Bus correspondant reste puissant : le Flatpak est prévu pour un usage local de confiance et n'est pas prêt pour Flathub.
 
-### Compatibilité Android 17
+Le bundle Flatpak est construit dans la CI ARM64 native et publié comme artefact de workflow. La procédure d'installation est dans le [README](../README.md).
 
-La documentation officielle Android 17 indique `compileSdk = 37`. Elle recommande de relever aussi `targetSdk` à 37 lorsque l'application est prête à adopter et tester les nouveaux comportements d'exécution. Il ne faut pas relever mécaniquement `targetSdk` avant de vérifier les fenêtres virtuelles, les services privilégiés Shizuku, les permissions et les restrictions de démarrage en arrière-plan sur One UI 9.
+## Validation à effectuer
 
-Aucune APK nouvelle n'est produite à ce stade : cela nécessiterait soit une autorisation écrite/licence du mainteneur permettant les modifications et la redistribution, soit une application Android indépendante créée proprement, sans reprendre le code FlipEx.
+Les tests automatisés valident la compilation, le packaging et les comportements simulés. Ils ne prouvent pas encore :
+- la liaison réelle du Binder Shizuku sur One UI 9 ;
+- l'ouverture de la nouvelle activité dans l'écran virtuel sur le Z Flip6 ;
+- le lancement multi-écran de toutes les applications ;
+- la fluidité et la netteté sur le Helio P60T/Plasma.
 
-### Conditions pour débloquer le livrable APK
+Le premier test matériel doit commencer par l'autorisation Shizuku, puis le diagnostic du panneau Android, l'installation de l'APK, le lancement du Flatpak et le test de quelques applications sur le second écran.
 
-1. Obtenir du mainteneur une licence explicite ou une autorisation écrite couvrant la modification et la distribution de l'APK ; ou lancer une implémentation Android indépendante.
-2. Définir la cible `compileSdk 37` et conserver provisoirement `targetSdk 36` jusqu'aux tests de comportement Android 17.
-3. Ajouter une compilation reproductible, des tests unitaires et des contrôles de manifeste.
-4. Signer l'APK avec une clé contrôlée par l'utilisateur, stockée hors du dépôt et de GitHub.
-5. Installer et valider sur le Galaxy Z Flip6 : démarrage Shizuku, Binder/UserService, affichage virtuel, fenêtre, saisie et restauration après arrêt.
+## Verdict
 
-Ce blocage est indépendant du Flatpak : le Flatpak Chromebook peut être compilé et validé sans modifier le code Android tiers.
+**Socle de code Android :** créé dans FlipdexOS, code original MIT, build CI ajouté.
 
-## Verdict de l'étape 4
+**APK debug :** disponible comme artefact après réussite du workflow Android ; elle ne constitue pas encore une release signée de production.
 
-**Flatpak :** packaging ARM64 intégré au dépôt ; la compilation réelle et les tests sont exécutés par le workflow CI ajouté. Le test sur le matériel Chromebook reste à faire.
+**Flatpak :** manifeste et pipeline ARM64 présents ; installation réelle et validation sur le Chromebook en attente.
 
-**APK Z Flip6 :** non produit, car aucune source Android intégrée ou autorisation de réutilisation du dépôt tiers n'est disponible. Il serait trompeur de déclarer l'étape 4 totalement terminée tant que ce point n'est pas débloqué.
+**Étape 4 :** reste à confirmer par les builds CI et les tests matériels. L'étape 5 sera dédiée à la validation et aux corrections observées sur le Z Flip6 et le Chromebook.
 
 ## Sources
 
-- [FlipEx upstream — dépôt et licence](https://github.com/Vedjamkar/flipex)
-- [FlipEx upstream — code Gradle Android](https://github.com/Vedjamkar/flipex/blob/main/app/build.gradle)
-- [FlipEx upstream — dernière release publiée](https://github.com/Vedjamkar/flipex/releases/latest)
-- [Android Developers — configurer le SDK Android 17](https://developer.android.com/about/versions/17/setup-sdk)
-- [Flatpak — manifestes](https://docs.flatpak.org/en/latest/manifests.html)
-- [Flatpak — permissions du bac à sable](https://docs.flatpak.org/en/latest/sandbox-permissions.html)
-- [Freedesktop SDK — support des versions](https://freedesktop-sdk.gitlab.io/documentation/wiki/Releases.html)
-- [GitHub Actions — runners ARM64](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+- [SDK Android 17 — compileSdk 37](https://developer.android.com/about/versions/17/setup-sdk)
+- [Android Gradle Plugin 9.4.0 — compatibilité API 37 / Gradle 9.6 / JDK 17](https://developer.android.com/build/releases/agp-9-4-0-release-notes)
+- [Shizuku API — UserService](https://github.com/RikkaApps/Shizuku-API)
+- [scrcpy — écran virtuel et --start-app](https://github.com/Genymobile/scrcpy/blob/master/doc/virtual-display.md)
+- [android-desk — référence GPL-3.0](https://github.com/jitunayak/android-desk)
+- [Flatpak — sandbox et manifeste](https://docs.flatpak.org/en/latest/sandbox-permissions.html)

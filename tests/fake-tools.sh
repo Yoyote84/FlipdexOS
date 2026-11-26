@@ -40,7 +40,7 @@ case "$1" in
         ;;
       pm)
         case "$1/$2" in
-          path/dev.ved.flipdex) printf 'package:/data/app/dev.ved.flipdex/base.apk\n' ;;
+          path/io.github.yoyote84.flipdexos) printf 'package:/data/app/dev.ved.flipdex/base.apk\n' ;;
           path/moe.shizuku.privileged.api)
             [[ "$FAKE_SHIZUKU" == "present" ]] && printf 'package:/data/app/moe.shizuku.privileged.api/base.apk\n'
             ;;
@@ -79,7 +79,7 @@ case "$1" in
         case "$1" in
           package)
             case "$2" in
-              dev.ved.flipdex) printf 'Package [dev.ved.flipdex] targetSdk=36\n    versionName=0.3.4\n' ;;
+              io.github.yoyote84.flipdexos) printf 'Package [io.github.yoyote84.flipdexos] targetSdk=36\n    versionName=0.3.4\n' ;;
               moe.shizuku.privileged.api) printf 'Package [moe.shizuku.privileged.api]\n    versionName=13.6.0\n' ;;
             esac
             ;;
@@ -91,7 +91,7 @@ case "$1" in
         esac
         ;;
       wm) : ;;
-      am) printf 'Starting: Intent { cmp=dev.ved.flipdex/.MainActivity }\nStatus: ok\nComplete\n' ;;
+      am) printf 'Starting: Intent { cmp=io.github.yoyote84.flipdexos/.desktop.DesktopActivity }\nStatus: ok\nComplete\n' ;;
       *) : ;;
     esac
     ;;
@@ -165,6 +165,7 @@ export ANDROID_SERIAL=FAKE123
 DEFAULT_OUTPUT="$(bash "$ROOT/scripts/flipex-monitor.sh")"
 printf '%s\n' "$DEFAULT_OUTPUT"
 grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
+grep -Fxq -- '--start-app=io.github.yoyote84.flipdexos/.desktop.DesktopActivity' "$FAKE_ARGS"
 grep -Fq '1920x1200 (kscreen-doctor)' <<<"$DEFAULT_OUTPUT"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
@@ -262,14 +263,14 @@ grep -Fxq 'enable_non_resizable_multi_window=0' "$FAKE_SETTINGS_FILE"
 # Shizuku must be present and its server process must be visible before settings change.
 export FAKE_SHIZUKU=missing
 if bash "$ROOT/scripts/flipex-monitor.sh" >/dev/null 2>&1; then
-  printf 'FlipEx Monitor a accepté un téléphone sans Shizuku installé.\n' >&2
+  printf 'FlipdexOS Monitor a accepté un téléphone sans Shizuku installé.\n' >&2
   exit 1
 fi
 export FAKE_SHIZUKU=present
 export FAKE_SHIZUKU_SERVER=stopped
 if bash "$ROOT/scripts/flipex-monitor.sh" >/dev/null 2>&1; then
-  printf 'FlipEx Monitor a accepté Shizuku arrêté.\n' >&2
+  printf 'FlipdexOS Monitor a accepté Shizuku arrêté.\n' >&2
   exit 1
 fi
 
-printf 'Tous les tests FlipEx Monitor sont passés.\n'
+printf 'Tous les tests FlipdexOS Monitor sont passés.\n'

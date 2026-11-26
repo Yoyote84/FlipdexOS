@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.1.0"
+VERSION="0.2.0"
 ADB_BIN="${ADB:-adb}"
 SERIAL="${ANDROID_SERIAL:-}"
 OUTPUT=""
 
 usage() {
   cat <<'EOF'
-FlipdexOS — diagnostic Android / Shizuku / FlipEx (lecture seule)
-Usage: diagnose-flipex-android.sh [--serial SERIAL] [--output FILE]
+FlipdexOS — diagnostic Android / Shizuku / FlipdexOS (lecture seule)
+Usage: diagnose-flipdex-android.sh [--serial SERIAL] [--output FILE]
 Options:
   --serial SERIAL  Sélectionner un appareil ADB précis.
   --output FILE    Enregistrer aussi le rapport dans FILE.
   -h, --help       Afficher cette aide.
-Le script ne modifie aucun réglage, ne démarre pas Shizuku et ne lance pas FlipEx.
-Il ne peut pas confirmer l'état Binder interne de Shizuku : vérifier dans Shizuku puis FlipEx.
+Le script ne modifie aucun réglage, ne démarre pas Shizuku et ne lance pas FlipdexOS.
+Il ne peut pas confirmer l'état Binder interne de Shizuku : vérifier dans Shizuku puis FlipdexOS.
 EOF
 }
 die() { printf 'ERREUR : %s\n' "$*" >&2; exit 1; }
@@ -24,7 +24,7 @@ while (($#)); do
     --serial) (($# >= 2)) || die "--serial demande une valeur."; SERIAL="$2"; shift 2 ;;
     --output) (($# >= 2)) || die "--output demande un chemin."; OUTPUT="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
-    --version) printf 'diagnose-flipex-android %s\n' "$VERSION"; exit 0 ;;
+    --version) printf 'diagnose-flipdex-android %s\n' "$VERSION"; exit 0 ;;
     *) die "option inconnue : $1 (voir --help)." ;;
   esac
 done
@@ -68,8 +68,8 @@ format_oneui() {
 
 report() {
   local brand model release sdk oneui_code oneui adb_usb adb_wifi
-  local shizuku_path shizuku_dump shizuku_version flipex_path flipex_dump
-  local flipex_version flipex_target shizuku_process host_os
+  local shizuku_path shizuku_dump shizuku_version flipdex_path flipdex_dump
+  local flipdex_version flipdex_target shizuku_process host_os
   brand="$(read_prop ro.product.brand)"
   model="$(read_prop ro.product.model)"
   release="$(read_prop ro.build.version.release)"
@@ -81,10 +81,10 @@ report() {
   shizuku_path="$(package_path moe.shizuku.privileged.api)"
   shizuku_dump="$(package_dump moe.shizuku.privileged.api)"
   shizuku_version="$(package_field "$shizuku_dump" versionName)"
-  flipex_path="$(package_path dev.ved.flipdex)"
-  flipex_dump="$(package_dump dev.ved.flipdex)"
-  flipex_version="$(package_field "$flipex_dump" versionName)"
-  flipex_target="$(package_field "$flipex_dump" targetSdk)"
+  flipdex_path="$(package_path io.github.yoyote84.flipdexos)"
+  flipdex_dump="$(package_dump io.github.yoyote84.flipdexos)"
+  flipdex_version="$(package_field "$flipdex_dump" versionName)"
+  flipdex_target="$(package_field "$flipdex_dump" targetSdk)"
   shizuku_process="$(adb_shell ps -A | grep -E "shizuku_server|libshizuku[.]so" || true)"
   host_os="Linux $(uname -m)"
   if [[ -r /etc/os-release ]]; then
@@ -92,7 +92,7 @@ report() {
   fi
 
   printf '%s\n' "============================================================"
-  printf '%s\n' "FlipdexOS — rapport de compatibilité FlipEx / Android"
+  printf '%s\n' "FlipdexOS — rapport de compatibilité FlipdexOS / Android"
   printf '%s\n' "============================================================"
   printf 'Date du rapport : %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')"
   printf 'Ordinateur hôte : %s\n' "$host_os"
@@ -117,23 +117,23 @@ report() {
   else
     printf '%s\n' "Processus serveur : non détecté par ps -A."
   fi
-  printf '%s\n' "Confirmer dans Shizuku que le serveur est actif et que FlipEx est autorisé."
+  printf '%s\n' "Confirmer dans Shizuku que le serveur est actif et que FlipdexOS est autorisé."
 
-  printf '\n%s\n' "[FlipEx]"
-  if [[ -n "$flipex_path" ]]; then
-    printf 'Application : installée (%s)\n' "${flipex_version:-version inconnue}"
-    printf "targetSdk de l'APK installé : %s\\n" "${flipex_target:-inconnu}"
-    if [[ "$sdk" == "37" && "$flipex_target" == "36" ]]; then
+  printf '\n%s\n' "[FlipdexOS]"
+  if [[ -n "$flipdex_path" ]]; then
+    printf 'Application : installée (%s)\n' "${flipdex_version:-version inconnue}"
+    printf "targetSdk de l'APK installé : %s\\n" "${flipdex_target:-inconnu}"
+    if [[ "$sdk" == "37" && "$flipdex_target" == "36" ]]; then
       printf '%s\n' "APK ciblant API 36 sur Android 17 ; cela ne prouve pas encore la compatibilité DeX."
     fi
   else
     printf '%s\n' "Application : absente"
-    printf '%s\n' "Installe FlipEx avant le test complet, puis relance ce diagnostic."
+    printf '%s\n' "Installe FlipdexOS avant le test complet, puis relance ce diagnostic."
   fi
 
   printf '\n%s\n' "[Limites]"
   printf '%s\n' "- Lecture seule : aucun réglage, service ou paramètre n’a été modifié."
-  printf '%s\n' "- ADB ne valide ni Shizuku.pingBinder() dans FlipEx ni la liaison du UserService."
+  printf '%s\n' "- ADB ne valide ni Shizuku.pingBinder() dans FlipdexOS ni la liaison du UserService."
   printf '%s\n' "- Un test d’écran HDMI / DeX sur le Z Flip6 reste indispensable."
   printf '%s\n' "============================================================"
 }

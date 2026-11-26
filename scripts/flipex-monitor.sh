@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# FlipdexOS / FlipEx Monitor
+# FlipdexOS / FlipdexOS Monitor
 # DeX virtual/overlay display with Chromebook mouse + keyboard input.
 set -Eeuo pipefail
 
-VERSION="0.10.0"
+VERSION="0.11.0"
 ADB_BIN="${ADB:-adb}"
 if [[ -n "${SCRCPY:-}" ]]; then
   SCRCPY_BIN="$SCRCPY"
@@ -20,7 +20,7 @@ KEYBOARD_MODE="uhid"
 FPS="30"
 BIT_RATE="20M"
 ACTION="start"
-FLIPEX_COMPONENT="dev.ved.flipdex/.MainActivity"
+FLIPDEX_COMPONENT="io.github.yoyote84.flipdexos/.desktop.DesktopActivity"
 ANDROID_SDK=""
 OVERLAY_ID=""
 OVERLAY_PREVIOUS=""
@@ -29,7 +29,7 @@ SCRCPY_HELP=""
 SCRCPY_VERSION=""
 HOST_RESOLUTION_SOURCE=""
 HOST_RESOLUTION=""
-FLIPEX_TARGET_SDK=""
+FLIPDEX_TARGET_SDK=""
 MAX_SOURCE_SHORT_SIDE=1080
 HOST_FALLBACK_RESOLUTION="1728x1080"
 FLEX_DISPLAY=0
@@ -42,25 +42,25 @@ STATE_FILE=""
 SETTINGS_SNAPSHOT_ACTIVE=0
 
 gui_notify() {
-  local urgency="${1:-normal}" title="${2:-FlipEx Monitor}" message="${3:-}"
+  local urgency="${1:-normal}" title="${2:-FlipdexOS Monitor}" message="${3:-}"
   [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] || return 0
   if command -v notify-send >/dev/null 2>&1; then
-    notify-send --app-name="FlipEx Monitor" --urgency="$urgency" "$title" "$message" >/dev/null 2>&1 || true
+    notify-send --app-name="FlipdexOS Monitor" --urgency="$urgency" "$title" "$message" >/dev/null 2>&1 || true
   elif command -v kdialog >/dev/null 2>&1; then
     kdialog --title="$title" --passivepopup "$message" 6 >/dev/null 2>&1 &
   fi
 }
 die() {
   printf 'Erreur : %s\n' "$*" >&2
-  gui_notify critical "FlipEx Monitor — connexion impossible" "$*"
+  gui_notify critical "FlipdexOS Monitor — connexion impossible" "$*"
   exit 1
 }
-info() { printf '[FlipEx Monitor] %s\n' "$*"; }
-warn() { printf '[FlipEx Monitor] Attention : %s\n' "$*" >&2; }
+info() { printf '[FlipdexOS Monitor] %s\n' "$*"; }
+warn() { printf '[FlipdexOS Monitor] Attention : %s\n' "$*" >&2; }
 
 usage() {
   cat <<'EOF'
-FlipEx Monitor — DeX dans une fenêtre Linux avec souris et clavier du Chromebook
+FlipdexOS Monitor — DeX dans une fenêtre Linux avec souris et clavier du Chromebook
 
 Usage: flipex-monitor [options]
 
@@ -91,7 +91,7 @@ Exemples:
   flipex-monitor --display-mode virtual
 
 Profil auto : détecte l’écran du Chromebook et aligne le petit côté sur 1080 px,
-la limite de rendu actuelle de FlipEx (ex. 1920x1200 devient 1728x1080).
+le profil de rendu conservateur (ex. 1920x1200 devient 1728x1080).
 
 Avec --mouse uhid, Alt gauche libère/reprend le pointeur.
 En mode sdk (défaut), le pavé tactile reste libre sur le Chromebook.
@@ -328,7 +328,7 @@ resolve_display_profile() {
     warn "résolution hôte non détectée; profil de secours Lenovo Duet 16:10 utilisé."
   fi
   info "Écran Chromebook détecté : $host_resolution ($HOST_RESOLUTION_SOURCE)."
-  info "Surface DeX alignée sur FlipEx : $DISPLAY_SPEC; pas de mise à l’échelle 4K artificielle."
+  info "Surface du bureau FlipdexOS : $DISPLAY_SPEC; pas de mise à l’échelle 4K artificielle."
 }
 
 validate_options() {
@@ -362,28 +362,28 @@ detect_android_version() {
 detect_shizuku() {
   local package_path package_info
   package_path="$(adb_phone shell pm path moe.shizuku.privileged.api 2>/dev/null | tr -d '\r' | sed -n '1p' || true)"
-  [[ "$package_path" == package:* ]] || die "Shizuku n'est pas installé. Installe-le depuis une source officielle avant de lancer FlipEx."
+  [[ "$package_path" == package:* ]] || die "Shizuku n'est pas installé. Installe-le depuis une source officielle avant de lancer FlipdexOS Desktop."
   package_info="$(adb_phone shell dumpsys package moe.shizuku.privileged.api 2>/dev/null | tr -d '\r' || true)"
   SHIZUKU_VERSION="$(grep -oE 'versionName=[^[:space:]]+' <<<"$package_info" | head -n 1 | cut -d= -f2 || true)"
   SHIZUKU_PROCESS="$(adb_phone shell ps -A 2>/dev/null | tr -d '\r' | grep -E 'shizuku_server|libshizuku\.so' || true)"
   [[ -n "$SHIZUKU_PROCESS" ]] || die "Shizuku est installé (${SHIZUKU_VERSION:-version inconnue}), mais son serveur n'est pas détecté. Ouvre Shizuku, démarre son serveur en mode ADB, puis relance."
   info "Shizuku : ${SHIZUKU_VERSION:-version inconnue} · processus serveur détecté."
-  warn "La détection du processus ne garantit pas que le Binder Shizuku fonctionne. Vérifie dans l'application Shizuku que FlipEx est autorisé."
+  warn "La détection du processus ne garantit pas que le Binder Shizuku fonctionne. Vérifie dans l'application Shizuku que FlipdexOS est autorisé."
 }
 
 
-detect_flipex_target_sdk() {
+detect_flipdex_target_sdk() {
   local package_info
-  package_info="$(adb_phone shell dumpsys package dev.ved.flipdex 2>/dev/null | tr -d '\r' || true)"
-  FLIPEX_TARGET_SDK="$(grep -oE 'targetSdk=[0-9]+' <<<"$package_info" | head -n 1 | cut -d= -f2 || true)"
+  package_info="$(adb_phone shell dumpsys package io.github.yoyote84.flipdexos 2>/dev/null | tr -d '\r' || true)"
+  FLIPDEX_TARGET_SDK="$(grep -oE 'targetSdk=[0-9]+' <<<"$package_info" | head -n 1 | cut -d= -f2 || true)"
   if (( ANDROID_SDK >= 37 )); then
-    if [[ "$FLIPEX_TARGET_SDK" =~ ^[0-9]+$ ]]; then
-      info "FlipEx cible Android API $FLIPEX_TARGET_SDK; téléphone API $ANDROID_SDK."
-      if (( FLIPEX_TARGET_SDK < 37 )); then
-        warn "l'APK FlipEx n'a pas encore targetSdk 37. FlipdexOS ne peut pas modifier le manifeste de l'APK Android; la correction doit être faite dans le projet source FlipEx."
+    if [[ "$FLIPDEX_TARGET_SDK" =~ ^[0-9]+$ ]]; then
+      info "FlipdexOS cible Android API $FLIPDEX_TARGET_SDK; téléphone API $ANDROID_SDK."
+      if (( FLIPDEX_TARGET_SDK < 37 )); then
+        warn "l'APK FlipdexOS cible encore API 36. Le projet compile déjà avec API 37 ; le passage de targetSdk à 37 attend les tests de comportement Android 17."
       fi
     else
-      warn "impossible de lire le targetSdk de FlipEx; l'avertissement Android 17 peut venir de l'APK FlipEx et non de scrcpy."
+      warn "impossible de lire le targetSdk de FlipdexOS."
     fi
   fi
 }
@@ -561,26 +561,20 @@ start_monitor() {
   select_device
   detect_android_version
   detect_shizuku
-  detect_flipex_target_sdk
+  detect_flipdex_target_sdk
   resolve_display_profile
   validate_options
 
-  local model package_path launch_output
+  local model package_path
   model="$(adb_phone shell getprop ro.product.model 2>/dev/null | tr -d '\r' || true)"
-  package_path="$(adb_phone shell pm path dev.ved.flipdex 2>/dev/null | tr -d '\r' || true)"
-  [[ "$package_path" == package:* ]] || die "l'application Android FlipEx (dev.ved.flipdex) ne semble pas installée."
+  package_path="$(adb_phone shell pm path io.github.yoyote84.flipdexos 2>/dev/null | tr -d '\r' || true)"
+  [[ "$package_path" == package:* ]] || die "l'application Android FlipdexOS (io.github.yoyote84.flipdexos) ne semble pas installée."
 
-  info "Téléphone : ${model:-modèle non identifié} · Android ${ANDROID_RELEASE:-inconnu} (API $ANDROID_SDK) · One UI $ONE_UI_NAME"
+  info "Téléphone : \${model:-modèle non identifié} · Android \${ANDROID_RELEASE:-inconnu} (API $ANDROID_SDK) · One UI $ONE_UI_NAME"
   save_settings_snapshot
   info "Activation des réglages nécessaires au mode bureau…"
   apply_desktop_settings
-
-  info "Démarrage de FlipEx sur le téléphone…"
-  launch_output="$(adb_phone shell am start -W -n "$FLIPEX_COMPONENT" 2>&1 | tr -d '\r' || true)"
-  if grep -Eqi 'Error:|Exception|does not exist|unable to resolve' <<<"$launch_output"; then
-    printf '%s\n' "$launch_output" >&2
-    die "Android n'a pas pu démarrer FlipEx. Vérifie que l'application est installée et configurée."
-  fi
+  info "FlipdexOS Desktop sera lancé directement sur l'écran virtuel, sans ouvrir le panneau sur l'écran principal."
 
   local selected_display="$DISPLAY_MODE"
 
@@ -607,6 +601,8 @@ start_monitor() {
     if has_scrcpy_option "--no-vd-destroy-content"; then args+=(--no-vd-destroy-content); fi
   fi
 
+  require_scrcpy_option "--start-app"
+  args+=(--start-app="$FLIPDEX_COMPONENT")
   args+=("--mouse=$MOUSE_MODE" "--keyboard=$KEYBOARD_MODE")
   if has_scrcpy_option "--mouse-bind"; then
     if [[ "$MOUSE_MODE" == "sdk" ]]; then
@@ -627,7 +623,7 @@ start_monitor() {
   if has_scrcpy_option "--keep-active"; then args+=(--keep-active); fi
   if has_scrcpy_option "--stay-awake" && [[ "$SERIAL" != *:* && "$SERIAL" != *"_adb-tls-"* ]]; then args+=(--stay-awake); fi
   if has_scrcpy_option "--disable-screensaver"; then args+=(--disable-screensaver); fi
-  args+=(--no-audio "--window-title=FlipEx Monitor — DeX net")
+  args+=(--no-audio "--window-title=FlipdexOS Monitor — DeX net")
 
   info "Mode écran : $selected_display"
   info "Résolution : $DISPLAY_SPEC · $FPS images/s · $BIT_RATE"
@@ -639,7 +635,7 @@ start_monitor() {
   info "Souris : $MOUSE_MODE · Clavier : $KEYBOARD_MODE"
   if [[ "$MOUSE_MODE" == "sdk" ]]; then info "Mode SDK : le curseur reste sur le Chromebook et les clics sont transmis à Android."; fi
   if [[ "$KEYBOARD_MODE" == "uhid" ]]; then info "Configure une fois le clavier physique Android en Français (AZERTY)."; fi
-  gui_notify normal "Téléphone connecté" "FlipEx est lancé. Le bureau va s'ouvrir sur le Chromebook."
+  gui_notify normal "Téléphone connecté" "FlipdexOS Desktop va s'ouvrir sur l'écran virtuel du Chromebook."
   info "Démarrage de scrcpy…"
 
   local scrcpy_status=0
@@ -654,7 +650,7 @@ while (($#)); do
     --check) ACTION="check"; shift ;;
     --list) ACTION="list"; shift ;;
     --restore) ACTION="restore"; shift ;;
-    --version) printf 'FlipEx Monitor %s\n' "$VERSION"; exit 0 ;;
+    --version) printf 'FlipdexOS Monitor %s\n' "$VERSION"; exit 0 ;;
     --serial) (($# >= 2)) || die "--serial nécessite une valeur."; SERIAL="$2"; shift 2 ;;
     --display) (($# >= 2)) || die "--display nécessite une valeur."; DISPLAY_SPEC="$2"; shift 2 ;;
     --display-mode) (($# >= 2)) || die "--display-mode nécessite une valeur."; DISPLAY_MODE="$2"; shift 2 ;;

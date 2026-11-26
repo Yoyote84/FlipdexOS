@@ -1,2 +1,7 @@
 /.flatpak/
 /dist/
+/.gradle/
+/local.properties
+**/build/
+*.jks
+*.keystore
