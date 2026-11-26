@@ -31,7 +31,7 @@ Aucune méthode ne permet d'exécuter une commande arbitraire ni de passer du te
 - filtre la liste par nom ou identifiant de paquet ;
 - lance une application sur le même écran grâce à `ActivityOptions.setLaunchDisplayId()`.
 
-Le client Linux demande à scrcpy de créer un nouvel écran et de démarrer directement cette activité dessus via `--start-app`. Il n'ouvre donc pas l'interface compagnon sur l'écran principal du téléphone.
+Le client Linux demande à scrcpy de créer un nouvel écran et de démarrer le paquet FlipdexOS via `--start-app` (cette option attend un nom de paquet, pas un nom d'activité). `MainActivity` détecte un lancement MAIN/LAUNCHER sur un écran non principal, démarre `DesktopActivity` sur ce même écran puis se ferme. Sur l'écran principal, le même paquet ouvre normalement le panneau compagnon.
 
 ## API et limites
 
