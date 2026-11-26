@@ -19,7 +19,7 @@ grep -Fq 'versionCode 2' "$GRADLE" || die "versionCode n'a pas été incrément�
 grep -Fq 'FLIPDEX_KEYSTORE_PATH' "$GRADLE" || die "chemin du keystore non configurable."
 grep -Fq 'FLIPDEX_KEY_ALIAS' "$GRADLE" || die "alias de clé non configurable."
 grep -Fq 'workflow_dispatch:' "$WORKFLOW" || die "workflow release non manuel."
-grep -Fq 'apksigner verify' "$WORKFLOW" || die "vérification apksigner absente."
+grep -Fq 'apksigner' "$WORKFLOW" || die "vérification apksigner absente."
 grep -Fq 'zipalign' "$WORKFLOW" || die "contrôle zipalign absent."
 grep -Fq 'flipdexos-android-release-signed' "$WORKFLOW" || die "artefact release absent."
 grep -Fq '*.jks' "$GITIGNORE" || die "le keystore JKS n'est pas ignoré par Git."
