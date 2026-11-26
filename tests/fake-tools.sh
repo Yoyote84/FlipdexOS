@@ -84,6 +84,7 @@ if [[ "${1:-}" == "--help" ]]; then
 --disable-screensaver
 --flex-display
 --no-vd-destroy-content
+--no-downsize-on-error
 HELP
   exit 0
 fi
