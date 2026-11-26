@@ -362,13 +362,21 @@ detect_android_version() {
 detect_shizuku() {
   local package_path package_info
   package_path="$(adb_phone shell pm path moe.shizuku.privileged.api 2>/dev/null | tr -d '\r' | sed -n '1p' || true)"
-  [[ "$package_path" == package:* ]] || die "Shizuku n'est pas installé. Installe-le depuis une source officielle avant de lancer FlipdexOS Desktop."
+  if [[ "$package_path" != package:* ]]; then
+    warn "Shizuku n'est pas installé. La session bureau continue avec les droits ADB shell ; les fonctions privilégiées du panneau Android resteront indisponibles."
+    return 0
+  fi
+
   package_info="$(adb_phone shell dumpsys package moe.shizuku.privileged.api 2>/dev/null | tr -d '\r' || true)"
   SHIZUKU_VERSION="$(grep -oE 'versionName=[^[:space:]]+' <<<"$package_info" | head -n 1 | cut -d= -f2 || true)"
   SHIZUKU_PROCESS="$(adb_phone shell ps -A 2>/dev/null | tr -d '\r' | grep -E 'shizuku_server|libshizuku\.so' || true)"
-  [[ -n "$SHIZUKU_PROCESS" ]] || die "Shizuku est installé (${SHIZUKU_VERSION:-version inconnue}), mais son serveur n'est pas détecté. Ouvre Shizuku, démarre son serveur en mode ADB, puis relance."
+  if [[ -z "$SHIZUKU_PROCESS" ]]; then
+    warn "Shizuku ${SHIZUKU_VERSION:-installé} ne semble pas actif. La session bureau continue via ADB ; les fonctions privilégiées dans l'application Android restent indisponibles."
+    return 0
+  fi
+
   info "Shizuku : ${SHIZUKU_VERSION:-version inconnue} · processus serveur détecté."
-  warn "La détection du processus ne garantit pas que le Binder Shizuku fonctionne. Vérifie dans l'application Shizuku que FlipdexOS est autorisé."
+  warn "Le processus détecté ne valide pas le Binder. Vérifie l'autorisation dans FlipdexOS ; ADB reste utilisé pour le bureau externe."
 }
 
 
