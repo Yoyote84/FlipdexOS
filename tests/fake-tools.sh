@@ -103,6 +103,16 @@ printf 'Screen 0: minimum 320 x 200, current 1920 x 1200, maximum 8192 x 8192\n'
 printf 'eDP-1 connected primary %s+0+0 (normal left inverted right x axis y axis) 250mm x 150mm\n' "$mode"
 XRANDR
 chmod +x "$TMP/xrandr"
+
+cat > "$TMP/wlr-randr" <<'WLR'
+#!/usr/bin/env bash
+exit 1
+WLR
+cat > "$TMP/kscreen-doctor" <<'KSCREEN'
+#!/usr/bin/env bash
+exit 1
+KSCREEN
+chmod +x "$TMP/wlr-randr" "$TMP/kscreen-doctor"
 export PATH="$TMP:$PATH"
 export FAKE_HOST_MODE=1920x1200
 export ADB="$TMP/adb"
