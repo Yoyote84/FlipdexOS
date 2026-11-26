@@ -164,7 +164,7 @@ bash -n scripts/flipex-monitor.sh
 bash tests/fake-tools.sh
 bash tests/flipex-android-preflight.sh
 bash tests/flatpak-packaging.sh
-gradle :app:testDebugUnitTest
+bash tests/android-logic-tests.sh
 gradle :app:assembleDebug
 ```
 
