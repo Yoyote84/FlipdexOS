@@ -129,6 +129,7 @@ check_tools() {
   require_scrcpy_option "--keyboard"
   require_scrcpy_option "--video-bit-rate"
   require_scrcpy_option "--max-fps"
+  require_scrcpy_option "--video-codec"
   require_scrcpy_option "--no-downsize-on-error"
   info "Architecture : $(uname -m)"
   if [[ -r /etc/os-release ]]; then
@@ -138,7 +139,9 @@ check_tools() {
   info "Session graphique : ${XDG_SESSION_TYPE:-inconnue} · ${XDG_CURRENT_DESKTOP:-bureau inconnu}"
   info "ADB : $("$ADB_BIN" version 2>&1 | head -n 1)"
   info "scrcpy : $version_line"
-  info "Option --no-downsize-on-error disponible : la définition demandée ne sera pas réduite silencieusement en cas d'erreur MediaCodec."
+  detect_host_resolution
+  info "Écran actif : $HOST_RESOLUTION ($HOST_RESOLUTION_SOURCE)."
+  info "H.264 et --no-downsize-on-error disponibles : la définition demandée ne sera pas réduite silencieusement en cas d'erreur MediaCodec."
   info "Contrôle souris/clavier disponible."
 }
 
