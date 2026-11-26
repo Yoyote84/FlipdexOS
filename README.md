@@ -13,8 +13,8 @@ L'objectif est que l'écran principal du téléphone reste utilisable indépenda
 
 ## Architecture
 
-1. Le Z Flip6 exécute FlipdexOS et Shizuku.
-2. FlipdexOS vérifie le Binder Shizuku et lie un UserService limité à une liste précise de propriétés et de réglages Android.
+1. Le Z Flip6 exécute FlipdexOS ; Shizuku est facultatif pour la session de bureau externe.
+2. Quand Shizuku fonctionne et que l'utilisateur autorise l'application, FlipdexOS lie un UserService limité à une liste précise de propriétés et de réglages Android.
 3. Le Chromebook se connecte au téléphone par USB et ADB.
 4. scrcpy crée un **nouvel écran virtuel**, indépendant de l'écran principal.
 5. scrcpy démarre le paquet `io.github.yoyote84.flipdexos` sur cet écran avec `--start-app`. Son activité compagnon détecte qu'elle n'est pas sur l'écran principal et redirige vers `DesktopActivity`.
@@ -62,9 +62,9 @@ L'APK de CI est une version **debug signée par la clé Android de CI** : elle s
 
 1. Installe et ouvre FlipdexOS.
 2. Installe Shizuku depuis sa source officielle.
-3. Démarre le serveur Shizuku en mode ADB ou via le débogage sans fil Android.
-4. Dans FlipdexOS, appuie sur **Vérifier et connecter Shizuku**.
-5. Autorise FlipdexOS dans Shizuku et vérifie que le diagnostic affiche l'UID 2000 lorsque le serveur a été lancé par ADB.
+3. Pour les diagnostics privilégiés du panneau Android, démarre le serveur Shizuku en mode ADB ou via le débogage sans fil Android.
+4. Dans FlipdexOS, appuie sur **Vérifier et connecter Shizuku** puis autorise l'application.
+5. Vérifie que le diagnostic affiche l'UID 2000 lorsque le service Shizuku fonctionne avec l'identité ADB shell. Cette étape est facultative pour lancer le bureau depuis le Chromebook.
 
 Le bouton **Aperçu du bureau sur ce téléphone** permet de vérifier le lanceur avant le test sur l'écran virtuel.
 
@@ -100,8 +100,7 @@ Le menu Plasma affiche **FlipdexOS — Connexion**. Le nom de commande historiqu
 - activer les options développeur et le débogage USB ;
 - brancher et déverrouiller le Z Flip6 ;
 - accepter l'empreinte RSA ADB ;
-- démarrer Shizuku ;
-- accorder la permission à FlipdexOS depuis le panneau Android.
+- démarrer Shizuku et accorder la permission à FlipdexOS uniquement si tu veux activer le UserService du panneau Android. Shizuku n'est plus un prérequis pour la session bureau ADB/scrcpy.
 
 Puis, sur le Chromebook :
 
@@ -112,13 +111,13 @@ bash scripts/flipex-monitor.sh --check
 bash scripts/flipex-monitor.sh
 ```
 
-Le script vérifie le processus serveur Shizuku et la présence de l'APK FlipdexOS. Il sauvegarde les valeurs initiales des trois réglages de mode bureau avant de les changer, puis les restaure à la fermeture de scrcpy. En cas d'arrêt brutal, utilise :
+Le script vérifie la présence du paquet FlipdexOS ; Shizuku est diagnostiqué de façon non bloquante. ADB shell est utilisé directement pour sauvegarder/restaurer les réglages et lancer le bureau virtuel. Il sauvegarde les valeurs initiales des trois réglages de mode bureau avant de les changer, puis les restaure à la fermeture de scrcpy. En cas d'arrêt brutal, utilise :
 
 ```bash
 flipex-monitor --restore
 ```
 
-La présence du processus Shizuku ne prouve pas à elle seule que le Binder est actif ; le panneau Android effectue le contrôle Binder et UserService.
+La présence du processus Shizuku ne prouve pas à elle seule que le Binder est actif. Le panneau Android effectue le contrôle Binder/UserService. Un problème Shizuku n'empêche plus le démarrage du bureau externe.
 
 ### Résolution, souris et clavier
 
@@ -168,7 +167,7 @@ bash tests/android-logic-tests.sh
 gradle :app:assembleDebug
 ```
 
-Les workflows GitHub Actions exécutent les tests du client Linux, construisent le Flatpak ARM64 et compilent l'APK debug. Ces tests automatisés ne remplacent pas l'essai sur le Chromebook et le Z Flip6 physiques.
+Les workflows GitHub Actions exécutent les tests du client Linux, construisent le Flatpak ARM64 et compilent l'APK debug. Le workflow de publication release est manuel et nécessite les secrets de signature personnels. Ces tests automatisés ne remplacent pas l'essai sur le Chromebook et le Z Flip6 physiques.
 
 ## Licences et provenance
 
@@ -179,6 +178,6 @@ Le code original du module Android FlipdexOS est publié sous licence MIT : [app
 - **android-desk** : GPL-3.0, consulté comme référence fonctionnelle ; aucun fichier source n'est copié.
 - **FlipEx** : aucune licence de réutilisation déclarée dans le dépôt source audité ; son code n'est pas repris.
 
-Voir [les notices tierces](app/THIRD_PARTY_NOTICES.md) et [l'architecture Android](docs/ANDROID_APP_ARCHITECTURE.md).
+Voir [les notices tierces](app/THIRD_PARTY_NOTICES.md), [l'architecture Android](docs/ANDROID_APP_ARCHITECTURE.md), [la signature de publication](app/RELEASE_SIGNING.md) et [le bilan de l'étape 5](docs/STEP_5_FINAL_VALIDATION.md).
 
 FlipdexOS est un projet indépendant, non développé ni approuvé par Samsung, RikkaApps, Genymobile ou les auteurs de FlipEx.
