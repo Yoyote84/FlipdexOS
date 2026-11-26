@@ -44,7 +44,6 @@ jobs:
         run: |
           bash scripts/flipex-monitor.sh --help
           bash scripts/flipex-monitor.sh --version
-          bash scripts/install-scrcpy-latest.sh --help || true
           if bash scripts/flipex-monitor.sh --fps 61; then
             echo "Une valeur FPS invalide a été acceptée." >&2
             exit 1
