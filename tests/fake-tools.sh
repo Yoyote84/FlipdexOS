@@ -40,7 +40,7 @@ case "$1" in
         ;;
       pm)
         case "$1/$2" in
-          path/io.github.yoyote84.flipdexos) printf 'package:/data/app/dev.ved.flipdex/base.apk\n' ;;
+          path/io.github.yoyote84.flipdexos) printf 'package:/data/app/io.github.yoyote84.flipdexos/base.apk\n' ;;
           path/moe.shizuku.privileged.api)
             [[ "$FAKE_SHIZUKU" == "present" ]] && printf 'package:/data/app/moe.shizuku.privileged.api/base.apk\n'
             ;;
@@ -79,7 +79,7 @@ case "$1" in
         case "$1" in
           package)
             case "$2" in
-              io.github.yoyote84.flipdexos) printf 'Package [io.github.yoyote84.flipdexos] targetSdk=36\n    versionName=0.3.4\n' ;;
+              io.github.yoyote84.flipdexos) printf 'Package [io.github.yoyote84.flipdexos] targetSdk=36\n    versionName=0.1.0-alpha01-debug\n' ;;
               moe.shizuku.privileged.api) printf 'Package [moe.shizuku.privileged.api]\n    versionName=13.6.0\n' ;;
             esac
             ;;
