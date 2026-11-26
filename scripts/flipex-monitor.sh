@@ -412,7 +412,7 @@ valid_overlay_setting() {
   local value="$1"
   [[ "$value" == "null" ]] && return 0
   (( ${#value} >= 1 && ${#value} <= 512 )) || return 1
-  [[ "$value" != *[!A-Za-z0-9._,:/+_-]* ]]
+  [[ "$value" != *[!A-Za-z0-9._,:/+]* ]]
 }
 
 save_settings_snapshot() {
