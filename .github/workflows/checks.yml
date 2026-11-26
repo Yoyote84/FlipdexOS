@@ -28,17 +28,24 @@ jobs:
           bash -n scripts/flipex-monitor.sh
           bash -n scripts/install-system.sh
           bash -n scripts/install-scrcpy-latest.sh
+          bash -n scripts/diagnose-flipex-android.sh
           bash -n tests/fake-tools.sh
+          bash -n tests/flipex-android-preflight.sh
 
       - name: Analyser les scripts
         run: |
           shellcheck scripts/flipex-monitor.sh
           shellcheck scripts/install-system.sh
           shellcheck scripts/install-scrcpy-latest.sh
+          shellcheck scripts/diagnose-flipex-android.sh
           shellcheck tests/fake-tools.sh
+          shellcheck tests/flipex-android-preflight.sh
 
       - name: Tester les profils Plasma/KScreen
         run: bash tests/fake-tools.sh
+
+      - name: Tester le diagnostic Android FlipEx
+        run: bash tests/flipex-android-preflight.sh
 
       - name: Vérifier la compatibilité Alpine/postmarketOS
         run: |
@@ -48,14 +55,19 @@ jobs:
             bash -n scripts/flipex-monitor.sh
             bash -n scripts/install-system.sh
             bash -n scripts/install-scrcpy-latest.sh
+            bash -n scripts/diagnose-flipex-android.sh
             bash -n tests/fake-tools.sh
+            bash -n tests/flipex-android-preflight.sh
             bash tests/fake-tools.sh
+            bash tests/flipex-android-preflight.sh
           '
 
       - name: Vérifier l'aide et les options
         run: |
           bash scripts/flipex-monitor.sh --help
           bash scripts/flipex-monitor.sh --version
+          bash scripts/diagnose-flipex-android.sh --help
+          bash scripts/diagnose-flipex-android.sh --version
           if bash scripts/flipex-monitor.sh --fps 61; then
             echo "Une valeur FPS invalide a été acceptée." >&2
             exit 1
