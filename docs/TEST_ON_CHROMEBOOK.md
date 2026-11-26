@@ -1,38 +1,61 @@
-# Validation matérielle — Lenovo Duet + Galaxy Z Flip 6 (One UI 9)
+# Validation matérielle — Lenovo Duet postmarketOS + Galaxy Z Flip 6 One UI 9
 
-Cette procédure valide le bureau DeX dans une fenêtre Linux, avec le pavé tactile et le clavier du Chromebook. La résolution automatique est conçue pour éviter d'agrandir une surface DeX plus petite que le flux scrcpy.
+Cible de cette procédure : **Lenovo Chromebook Duet, MediaTek Helio P60T, ARM64/aarch64, postmarketOS avec Plasma Desktop**, et Galaxy Z Flip 6 sous One UI 9 / Android 17. Le bureau DeX reste affiché dans une fenêtre Linux; le téléphone conserve son écran principal.
 
-## 1. Mettre à jour FlipdexOS
+## 1. Mettre à jour le dépôt
 
-Depuis la racine du dépôt :
+Depuis le répertoire FlipdexOS :
 
 ```bash
 git pull --ff-only origin main
-chmod +x scripts/flipex-monitor.sh scripts/install-system.sh scripts/install-scrcpy-latest.sh
+chmod +x scripts/*.sh
 ```
 
-## 2. Installer le scrcpy officiel récent pour ARM64
+## 2. Installer scrcpy 5.0.1 pour postmarketOS / Alpine
 
-La version recommandée est scrcpy 5.0.1. Le script télécharge le tag officiel, vérifie la somme SHA-256 du serveur Android et compile le client pour l'architecture Linux locale :
+L'installation principale passe par **apk**, et l'élévation utilise **doas** ou **sudo** selon ce qui est présent :
 
 ```bash
 bash scripts/install-scrcpy-latest.sh
-scrcpy --version
+/usr/local/bin/scrcpy --version
 adb version
 uname -m
 ```
 
-Le lanceur demande au minimum scrcpy 3.3.4 pour les écrans virtuels sur Android récent. La version 5.0.1 est recommandée pour les améliorations de décodage matériel, selon les pilotes disponibles sur le Chromebook.
+Le script installe les dépendances SDL3, FFmpeg, libusb et les outils de compilation, télécharge le serveur scrcpy officiel, vérifie sa somme SHA-256, compile le client pour l'architecture locale, puis l'installe dans `/usr/local/bin`.
 
-## 3. Vérifier le Z Flip 6 et FlipEx
+La version officielle vérifiée au moment de cette mise à jour est scrcpy 5.0.1. Les versions plus anciennes sont rejetées par le lanceur, car le profil Android 17 repose sur les options de cette version.
+
+**Attention :** scrcpy 5.0.1 nécessite SDL 3.2 ou plus récent et FFmpeg 6 ou plus récent. Si le dépôt postmarketOS de ton système ne fournit pas `sdl3-dev`, l'installateur s'arrête avec l'erreur d'APK. Ne mélange pas manuellement les dépôts Alpine edge à une base postmarketOS stable : il faut d'abord mettre à jour la base du système.
+
+## 3. Installer le lanceur dans Plasma
+
+Installation utilisateur, sans accès root :
+
+```bash
+bash scripts/install-system.sh --user
+```
+
+Cela place le lanceur dans `~/.local/bin/flipex-monitor` et crée le raccourci Plasma dans `~/.local/share/applications`. Le fichier de menu appelle le chemin complet et ne dépend pas du `PATH` du bureau. Ouvre **FlipEx Monitor — Connexion** depuis le menu Plasma.
+
+Pour lancer depuis le terminal :
+
+```bash
+$HOME/.local/bin/flipex-monitor --check
+```
+
+L'option `--system` installe au contraire dans `/usr/local/bin` et utilise `doas` ou `sudo`.
+
+## 4. Préparer le Z Flip 6
 
 Sur le téléphone :
 
 1. Active les Options pour les développeurs et le Débogage USB.
-2. Branche le téléphone en USB-C, déverrouille-le et accepte l'empreinte ADB.
-3. Vérifie que FlipEx est installé et configuré avec Shizuku.
-4. Dans FlipEx → Experimental → DeX window owner, essaie **Shizuku** en priorité pour éviter la fenêtre d'accessibilité appelée **FlipEx DeX screen**.
-5. Laisse **Test display on the phone** désactivé : ce n'est pas nécessaire à la capture scrcpy.
+2. Branche le téléphone au Chromebook en USB-C.
+3. Déverrouille-le et accepte l'empreinte RSA ADB.
+4. Vérifie que FlipEx est installé et configuré avec Shizuku.
+5. Dans FlipEx → Experimental → DeX window owner, privilégie **Shizuku** pour éviter la fenêtre d'accessibilité appelée **FlipEx DeX screen**.
+6. Laisse **Test display on the phone** désactivé : ce n'est pas nécessaire au flux scrcpy.
 
 Sur le Chromebook :
 
@@ -42,11 +65,20 @@ adb shell getprop ro.build.version.sdk
 adb shell dumpsys package dev.ved.flipdex | grep -E 'versionName|targetSdk'
 ```
 
-Pour One UI 9 / Android 17, le SDK Android attendu est 37. Si l'APK FlipEx indique **targetSdk=36**, son avertissement de compatibilité provient de l'application Android. FlipdexOS ne peut pas changer le manifeste ni reconstruire l'APK FlipEx à distance; son dépôt Android doit être mis à jour et testé séparément.
+Pour Android 17, le SDK attendu est 37. Si FlipEx indique `targetSdk=36`, l'avertissement de compatibilité appartient à l'APK Android. FlipdexOS sait le détecter, mais ne peut pas reconstruire l'APK issue du dépôt Android externe.
 
-## 4. Démarrer avec la résolution sans suréchantillonnage
+## 5. Vérifier Plasma et lancer DeX avec une résolution nette
 
-Depuis la racine de FlipdexOS :
+Dans Plasma, la résolution active est lue en priorité avec **KScreen** (`kscreen-doctor`). Le lanceur utilise ensuite `wlr-randr` ou `xrandr` si KScreen n'est pas disponible. Il ne dépend donc pas de `xrandr` dans une session Plasma Wayland.
+
+Vérifie l'environnement :
+
+```bash
+echo "$XDG_SESSION_TYPE / $XDG_CURRENT_DESKTOP"
+kscreen-doctor -o
+```
+
+Puis démarre :
 
 ```bash
 bash scripts/flipex-monitor.sh --check
@@ -54,48 +86,57 @@ bash scripts/flipex-monitor.sh --list
 bash scripts/flipex-monitor.sh
 ```
 
-Le mode par défaut détecte l'écran actif et adapte le petit côté à la surface actuellement rendue par FlipEx (1080 pixels maximum). Exemples :
+Le profil `auto` détecte la définition de l'écran et l'aligne sur la surface DeX réellement rendue par FlipEx. Le petit côté est plafonné à 1080 pixels par la logique actuelle de FlipEx :
 
-| Résolution de l'écran du Chromebook | Résolution virtuelle utilisée |
+| Écran du Chromebook | Surface virtuelle DeX |
 |---|---:|
 | 1920 × 1200 (16:10) | 1728 × 1080 |
 | 1920 × 1080 (16:9) | 1920 × 1080 |
 | 3840 × 2160 (4K) | 1920 × 1080 |
 
-Le profil utilise H.264, 20 Mbit/s, 30 FPS, un tampon vidéo minimal et désactive la réduction automatique de résolution lorsqu'elle est prise en charge. Il ne demande plus un flux 4K artificiel au-dessus d'une source DeX 1080p.
+Réglages par défaut : H.264, 20 Mbit/s, 30 FPS, tampon vidéo minimal et refus de réduction automatique de résolution en cas d'erreur d'encodeur. Un flux scrcpy 4K au-dessus d'une source DeX 1080p ne rendrait pas le texte plus net.
 
-Pour forcer manuellement le profil correspondant à un écran 16:10 ou 16:9 :
+Pour une première comparaison manuelle :
 
 ```bash
 flipex-monitor --display 1728x1080/160
 flipex-monitor --display 1920x1080/160
 ```
 
-Pour garder une image nette, conserve la fenêtre scrcpy à sa taille native plutôt que de l'étirer en plein écran. Une mise à l'échelle fractionnaire du bureau Linux peut aussi adoucir les bords.
+Pour juger la netteté, compare à la taille native de la fenêtre. Dans Plasma, utilise une mise à l'échelle d'écran de 100 % pendant ce test ; une mise à l'échelle fractionnaire ou l'agrandissement de la fenêtre peut adoucir les caractères.
 
-## 5. Valider souris, clavier et qualité puis envoyer le rapport
+La vraie définition 1440p/4K nécessite de modifier la surface virtuelle dans FlipEx Android lui-même. Augmenter uniquement la capture scrcpy ne suffit pas.
 
-Le mode souris par défaut est **sdk** : le curseur reste libre sur le Chromebook et les événements de clic sont transmis à Android. Teste clic gauche, clic droit, molette, glisser-déposer et déplacement des fenêtres DeX. Si une application ignore les événements SDK, compare :
+## 6. Tester souris et clavier
+
+La souris par défaut est en mode `sdk` : le curseur reste libre dans Plasma, tandis que les clics sont transmis à Android. Teste clic gauche, clic droit, molette, glisser-déposer et déplacement/redimensionnement de fenêtres DeX.
+
+Si certaines fenêtres ignorent les événements SDK, compare le mode HID :
 
 ```bash
 flipex-monitor --mouse uhid
 ```
 
-En mode **uhid**, le pointeur est capturé; **Alt gauche** le libère et le reprend. Le clavier est transmis en mode HID; configure la disposition physique du Z Flip 6 en Français (AZERTY).
+En mode `uhid`, le pointeur est capturé. **Alt gauche** le libère et le reprend. Le clavier est transmis en mode HID ; configure la disposition du clavier physique Android en Français (AZERTY).
 
-Pour arrêter, ferme la fenêtre scrcpy. En cas de problème, copie ce rapport :
+## 7. Rapport de diagnostic
+
+Ferme scrcpy pour arrêter le flux. Si un problème persiste, exécute :
 
 ```bash
 uname -a
 cat /etc/os-release
-xrandr --current 2>/dev/null || true
+echo "session=$XDG_SESSION_TYPE desktop=$XDG_CURRENT_DESKTOP"
+kscreen-doctor -o 2>&1 || true
+wlr-randr 2>&1 || true
+xrandr --current 2>&1 || true
 adb devices -l
 adb shell getprop ro.build.version.sdk
 adb shell dumpsys package dev.ved.flipdex | grep -E 'versionName|targetSdk'
-scrcpy --version
+/usr/local/bin/scrcpy --version
 bash scripts/flipex-monitor.sh --check
 ```
 
-Indique si le défaut concerne la netteté, les saccades, le pointeur, le clavier ou le bureau DeX. Masque le numéro de série ADB avant de partager le rapport.
+Masque le numéro de série ADB avant de partager la sortie.
 
-**Limite connue :** le code Android FlipEx actuel plafonne sa surface DeX interne à 1080 pixels sur le petit côté. Ce dépôt peut aligner précisément la capture avec cette surface, mais une définition DeX native 1440p/4K exige une modification puis une nouvelle compilation du projet Android FlipEx lui-même.
+**Limites vérifiées du projet :** les tests automatisés sont simulés et lancés dans GitHub Actions, y compris sous Alpine. Ils ne prouvent pas encore le fonctionnement matériel sur le Chromebook, ni la disponibilité d'un décodage vidéo accéléré pour le pilote graphique du Helio P60T. Le premier essai réel permettra de mesurer la fluidité et la netteté de bout en bout.
