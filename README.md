@@ -167,7 +167,7 @@ bash tests/android-logic-tests.sh
 gradle :app:assembleDebug
 ```
 
-Les workflows GitHub Actions exécutent les tests du client Linux, construisent le Flatpak ARM64 et compilent l'APK debug. Le workflow de publication release est manuel et nécessite les secrets de signature personnels. Ces tests automatisés ne remplacent pas l'essai sur le Chromebook et le Z Flip6 physiques.
+Les workflows GitHub Actions exécutent les tests du client Linux, construisent le Flatpak ARM64, compilent l'APK debug et vérifient le démarrage du panneau compagnon et de DesktopActivity sur un émulateur Android 16. Le workflow de publication release est manuel et nécessite les secrets de signature personnels. Ces tests automatisés ne remplacent pas l'essai sur le Chromebook et le Z Flip6 physiques.
 
 ## Licences et provenance
 
