@@ -52,8 +52,8 @@ FLIPDEX_PROXY_TEST_LOG="$TMP_DIR/allowed.log" PATH="$TMP_DIR:$PATH" \
 
 grep -Fxq -- "--host" "$TMP_DIR/allowed.log" || die "appel hôte --host absent."
 grep -Fxq -- "/bin/sh" "$TMP_DIR/allowed.log" || die "le relais hôte ne démarre pas son shell."
-grep -Fq -- 'export DISPLAY="$1"' "$TMP_DIR/allowed.log" || die "DISPLAY n'est pas transféré au relais hôte."
-grep -Fq -- 'export WAYLAND_DISPLAY="$1"' "$TMP_DIR/allowed.log" || die "WAYLAND_DISPLAY n'est pas transféré au relais hôte."
+grep -Fq -- "export DISPLAY=\"\$1\"" "$TMP_DIR/allowed.log" || die "DISPLAY n'est pas transféré au relais hôte."
+grep -Fq -- "export WAYLAND_DISPLAY=\"\$1\"" "$TMP_DIR/allowed.log" || die "WAYLAND_DISPLAY n'est pas transféré au relais hôte."
 grep -Fxq -- ":99" "$TMP_DIR/allowed.log" || die "valeur DISPLAY non transmise."
 grep -Fxq -- "wayland-test" "$TMP_DIR/allowed.log" || die "valeur WAYLAND_DISPLAY non transmise."
 grep -Fxq -- "/run/user/1000" "$TMP_DIR/allowed.log" || die "XDG_RUNTIME_DIR non transmis."
