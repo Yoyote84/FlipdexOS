@@ -77,6 +77,17 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        int displayId = getDisplay() == null ? 0 : getDisplay().getDisplayId();
+        if (DisplayRouting.shouldOpenDesktop(
+                getIntent().getAction(),
+                getIntent().hasCategory(Intent.CATEGORY_LAUNCHER),
+                displayId)) {
+            startActivity(new Intent(this, DesktopActivity.class));
+            finish();
+            return;
+        }
+
         buildInterface();
         deviceSummary.setText(BuildInfo.deviceLine()
                 + "\nAndroid " + android.os.Build.VERSION.RELEASE
