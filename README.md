@@ -2,7 +2,7 @@
 
 Client Linux ARM64 conçu en priorité pour le **Lenovo Chromebook Duet MediaTek Helio P60T sous postmarketOS + Plasma Desktop**. Il ouvre le bureau virtuel de **FlipEx** dans une fenêtre et le pilote avec le pavé tactile et le clavier du Chromebook. Debian/Ubuntu restent des cibles secondaires.
 
-> **État : version interactive en cours de validation matérielle.** Le lanceur, l'entrée souris/clavier, l'installation dans le menu et les tests simulés sont présents. Le fonctionnement exact avec le Lenovo Duet et le Samsung Z Flip 6 doit encore être confirmé sur les appareils réels. Aucun paquet ARM64 précompilé n'est publié.
+> **État : étape 4 en cours.** Le client Linux et le Flatpak ARM64 sont intégrés au dépôt et passent par une compilation CI dédiée. Le fonctionnement réel doit encore être confirmé sur le Lenovo Duet et le Samsung Z Flip 6. L'APK Android de FlipEx n'est pas généré par ce dépôt : son code reste externe et sans licence déclarée.
 
 ## Ce que fait FlipEx Monitor
 
@@ -107,6 +107,33 @@ Le second script installe le lanceur dans `~/.local/bin` et le raccourci dans `~
 
 La compilation scrcpy 5.0.1 exige SDL 3.2 ou plus récent, FFmpeg 6 ou plus récent et libusb. Sur une base postmarketOS trop ancienne pour fournir `sdl3-dev`, le script s'arrête sans mélanger des dépôts Alpine edge à la distribution : il faut d'abord mettre à jour postmarketOS vers une base disposant de SDL3. N'ajoute pas un dépôt edge manuellement à une base stable.
 
+## Version Flatpak pour le Chromebook ARM64
+
+Le dépôt fournit aussi un paquet Flatpak **distinct de l'APK Android**. Il vise le Lenovo Duet sous postmarketOS + Plasma, architecture `aarch64`.
+
+La méthode conserve ADB et scrcpy sur le système hôte : ils doivent accéder à l'USB et au compositeur graphique avec les permissions de postmarketOS. Le Flatpak utilise un petit pont `flatpak-spawn --host` pour appeler uniquement les commandes attendues (`adb`, `scrcpy`, les outils de résolution Plasma et les notifications). Il ne demande ni accès global au dossier personnel, ni `--device=all`, ni réseau dans le bac à sable.
+
+**Attention sécurité :** le droit D-Bus `org.freedesktop.Flatpak` nécessaire au lancement de commandes hôte est puissant. Ce Flatpak est prévu pour une installation locale de confiance sur ton Chromebook, pas pour une publication Flathub sans remplacer ce pont par une intégration plus restrictive.
+
+Depuis la racine du dépôt :
+
+```bash
+bash scripts/install-scrcpy-latest.sh
+bash scripts/build-flatpak.sh --install
+```
+
+Le premier script installe ADB et compile scrcpy pour l'architecture du Chromebook. Le second construit le bundle Flatpak ARM64, vérifie son SHA-256 puis l'installe pour l'utilisateur. Le lanceur **FlipdexOS — FlipEx Monitor** apparaît dans le menu Plasma et ouvre un terminal pour afficher les diagnostics. La construction seule, sans installation, se fait avec `bash scripts/build-flatpak.sh`.
+
+Pour démarrer ou diagnostiquer depuis le terminal :
+
+```bash
+flatpak run io.github.yoyote84.flipdexos --check
+flatpak run io.github.yoyote84.flipdexos --list
+flatpak run io.github.yoyote84.flipdexos
+```
+
+Le bundle utilise le runtime Freedesktop 26.08 et est construit sur un runner ARM64 natif dans GitHub Actions. Il ne contient pas de binaire scrcpy compilé pour une autre machine ; il s'appuie sur la version hôte installée ci-dessus.
+
 Le Chromebook doit disposer d'une session graphique Plasma (Wayland ou X11). Le câble USB-C transporte ici ADB et le flux vidéo compressé ; il ne transforme pas le Chromebook en moniteur HDMI natif.
 
 ## Installation
@@ -146,6 +173,14 @@ Chaque session sauvegarde les valeurs initiales des trois réglages globaux du m
 
 Le client Linux prend en charge Android API 37 avec scrcpy 5.0.1 ou ultérieur. Il détecte aussi le `targetSdk` de l'APK FlipEx. Si l'APK cible encore API 36, il l'indique clairement : l'avertissement de compatibilité Android appartient à l'application FlipEx et doit être corrigé dans son dépôt Android (mise à jour du manifeste, compilation SDK et validation des fenêtres multi-écrans). FlipdexOS ne modifie pas l'APK installée sur le téléphone.
 
+### APK Android destiné au Galaxy Z Flip6
+
+L'APK est bien la partie destinée au **Samsung Galaxy Z Flip6** ; le Flatpak est uniquement destiné au Chromebook. FlipdexOS ne contient toutefois pas le module Android de FlipEx. Le dépôt Android externe publie actuellement une source `0.3.4` avec `compileSdk 36` et `targetSdk 36`, mais aucune licence n'est déclarée dans les métadonnées GitHub et aucun fichier `LICENSE` n'est présent. Sa dernière release publiée est encore `v0.3.0`.
+
+En conséquence, ce dépôt ne reconditionne pas son code et ne prétend pas fournir un nouvel APK. Pour Android 17, la documentation officielle indique `compileSdk 37`; l'adoption de `targetSdk 37` doit être faite après les tests de comportement correspondants. L'APK final devra être construit et signé avec une source que nous sommes autorisés à modifier et redistribuer, puis testé sur le Z Flip6.
+
+Voir le [rapport de compilation de l'étape 4/5](docs/FLIPDEXOS_STEP_4.md).
+
 ### Diagnostic Android / Shizuku / FlipEx
 
 Pour vérifier l'état réel du téléphone avant un test DeX, connecte le Z Flip 6 en USB, autorise ADB, puis exécute :
@@ -172,13 +207,16 @@ bash -n scripts/install-system.sh
 bash -n scripts/install-scrcpy-latest.sh
 bash tests/fake-tools.sh
 bash tests/flipex-android-preflight.sh
+bash tests/flatpak-packaging.sh
 ```
 
-Les tests simulés vérifient KScreen/Plasma, les profils 16:9/16:10/4K, la résolution fixe et son option adaptative, les modes de souris et clavier, la détection préalable de Shizuku, la sauvegarde/restauration des réglages Android et la récupération du paramètre overlay. GitHub Actions exécute aussi les tests dans Alpine 3.24. Ces tests ne remplacent pas un essai sur le Lenovo Duet et le Z Flip 6 réels.
+Les tests simulés vérifient KScreen/Plasma, les profils 16:9/16:10/4K, la résolution fixe et son option adaptative, les modes de souris et clavier, la détection préalable de Shizuku, la sauvegarde/restauration des réglages Android et la récupération du paramètre overlay. GitHub Actions exécute aussi les tests dans Alpine 3.24 et construit un bundle Flatpak sur ARM64 natif. Ces contrôles ne remplacent pas un essai sur le Lenovo Duet et le Z Flip 6 réels.
 
 ## Références techniques
 
 - [Projet FlipEx Android et client de bureau](https://github.com/Vedjamkar/flipex)
+- [Documentation Flatpak — manifeste et compilation](https://docs.flatpak.org/en/latest/manifests.html)
+- [Documentation Flatpak — permissions du bac à sable](https://docs.flatpak.org/en/latest/sandbox-permissions.html)
 - [Documentation scrcpy — souris](https://github.com/Genymobile/scrcpy/blob/master/doc/mouse.md)
 - [Documentation scrcpy — clavier](https://github.com/Genymobile/scrcpy/blob/master/doc/keyboard.md)
 - [Options scrcpy](https://github.com/Genymobile/scrcpy/blob/master/app/scrcpy.1)

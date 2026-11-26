@@ -1,0 +1,39 @@
+name: Construire le Flatpak ARM64
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flatpak-aarch64:
+    name: Compiler le Flatpak pour postmarketOS ARM64
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Flatpak Builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes flatpak flatpak-builder
+
+      - name: Construire et vérifier le bundle ARM64
+        run: |
+          test "$(uname -m)" = "aarch64"
+          bash scripts/build-flatpak.sh --output-dir "$RUNNER_TEMP/flipdexos-dist"
+
+      - name: Publier le bundle de CI
+        uses: actions/upload-artifact@v4
+        with:
+          name: flipdexos-monitor-flatpak-aarch64
+          path: |
+            ${{ runner.temp }}/flipdexos-dist/*.flatpak
+            ${{ runner.temp }}/flipdexos-dist/*.flatpak.sha256
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,28 @@
+app-id: io.github.yoyote84.flipdexos
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+command: flipdex-monitor
+
+# Local-use package: the host bridge is required for the Chromebook's
+# already-installed ADB/scrcpy binaries and is intentionally documented.
+finish-args:
+  - --talk-name=org.freedesktop.Flatpak
+
+modules:
+  - name: flipdexos-monitor
+    buildsystem: simple
+    build-commands:
+      - install -D -m 755 packaging/flatpak/launch.sh /app/bin/flipdex-monitor
+      - install -D -m 755 packaging/flatpak/host-tool-proxy /app/libexec/flipdexos/host-tool-proxy
+      - mkdir -p /app/bin/host-tools
+      - for tool in adb scrcpy kscreen-doctor wlr-randr xrandr notify-send kdialog; do ln -s /app/libexec/flipdexos/host-tool-proxy "/app/bin/host-tools/$tool"; done
+      - install -D -m 755 scripts/flipex-monitor.sh /app/share/flipdexos/scripts/flipex-monitor.sh
+      - install -D -m 755 scripts/diagnose-flipex-android.sh /app/share/flipdexos/scripts/diagnose-flipex-android.sh
+      - install -D -m 644 README.md /app/share/doc/flipdexos/README.md
+      - install -D -m 644 docs/FLIPEX_MONITOR_STEP_3.md /app/share/doc/flipdexos/FLIPEX_MONITOR_STEP_3.md
+      - install -D -m 644 packaging/flatpak/io.github.yoyote84.flipdexos.desktop /app/share/applications/io.github.yoyote84.flipdexos.desktop
+      - install -D -m 644 packaging/flatpak/io.github.yoyote84.flipdexos.svg /app/share/icons/hicolor/scalable/apps/io.github.yoyote84.flipdexos.svg
+    sources:
+      - type: dir
+        path: .

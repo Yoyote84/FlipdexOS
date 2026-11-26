@@ -29,8 +29,13 @@ jobs:
           bash -n scripts/install-system.sh
           bash -n scripts/install-scrcpy-latest.sh
           bash -n scripts/diagnose-flipex-android.sh
+          bash -n scripts/package-release.sh
+          bash -n scripts/build-flatpak.sh
           bash -n tests/fake-tools.sh
           bash -n tests/flipex-android-preflight.sh
+          bash -n tests/flatpak-packaging.sh
+          sh -n packaging/flatpak/launch.sh
+          sh -n packaging/flatpak/host-tool-proxy
 
       - name: Analyser les scripts
         run: |
@@ -38,14 +43,21 @@ jobs:
           shellcheck scripts/install-system.sh
           shellcheck scripts/install-scrcpy-latest.sh
           shellcheck scripts/diagnose-flipex-android.sh
+          shellcheck scripts/package-release.sh
+          shellcheck scripts/build-flatpak.sh
+          shellcheck packaging/flatpak/launch.sh packaging/flatpak/host-tool-proxy
           shellcheck tests/fake-tools.sh
           shellcheck tests/flipex-android-preflight.sh
+          shellcheck tests/flatpak-packaging.sh
 
       - name: Tester les profils Plasma/KScreen
         run: bash tests/fake-tools.sh
 
       - name: Tester le diagnostic Android FlipEx
         run: bash tests/flipex-android-preflight.sh
+
+      - name: Tester le packaging Flatpak
+        run: bash tests/flatpak-packaging.sh
 
       - name: Vérifier la compatibilité Alpine/postmarketOS
         run: |
@@ -56,10 +68,16 @@ jobs:
             bash -n scripts/install-system.sh
             bash -n scripts/install-scrcpy-latest.sh
             bash -n scripts/diagnose-flipex-android.sh
+            bash -n scripts/package-release.sh
+            bash -n scripts/build-flatpak.sh
             bash -n tests/fake-tools.sh
             bash -n tests/flipex-android-preflight.sh
+            bash -n tests/flatpak-packaging.sh
+            sh -n packaging/flatpak/launch.sh
+            sh -n packaging/flatpak/host-tool-proxy
             bash tests/fake-tools.sh
             bash tests/flipex-android-preflight.sh
+            bash tests/flatpak-packaging.sh
           '
 
       - name: Vérifier l'aide et les options

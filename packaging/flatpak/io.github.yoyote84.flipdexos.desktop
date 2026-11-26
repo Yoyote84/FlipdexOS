@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=FlipdexOS — FlipEx Monitor
+GenericName=Moniteur DeX Android
+Comment=Ouvrir le bureau virtuel du Galaxy Z Flip6 dans Plasma
+Exec=flipdex-monitor
+Icon=io.github.yoyote84.flipdexos
+Terminal=true
+Categories=Utility;System;
+Keywords=DeX;Samsung;Android;ADB;scrcpy;
+StartupNotify=false

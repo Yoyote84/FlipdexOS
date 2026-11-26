@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+tool="${0##*/}"
+case "$tool" in
+  adb|scrcpy|kscreen-doctor|wlr-randr|xrandr|notify-send|kdialog)
+    ;;
+  *)
+    printf 'FlipdexOS Flatpak : commande hôte non autorisée par ce lanceur : %s\n' "$tool" >&2
+    exit 64
+    ;;
+esac
+
+command -v flatpak-spawn >/dev/null 2>&1 || {
+  printf 'FlipdexOS Flatpak : flatpak-spawn est indisponible.\n' >&2
+  exit 127
+}
+
+# Use the host PATH (not /app/bin from the sandbox). The application only
+# proxies this fixed allow-list; ADB and scrcpy keep the host USB/display setup.
+exec flatpak-spawn --host \
+  --env=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  "$tool" "$@"

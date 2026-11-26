@@ -64,7 +64,7 @@ OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
 STAGE="$TMP_DIR/$PACKAGE_NAME"
-mkdir -p "$STAGE/scripts" "$STAGE/packaging" "$STAGE/docs"
+mkdir -p "$STAGE/scripts" "$STAGE/packaging/flatpak" "$STAGE/docs"
 
 for file in \
   README.md \
@@ -72,7 +72,14 @@ for file in \
   scripts/install-system.sh \
   scripts/install-scrcpy-latest.sh \
   scripts/diagnose-flipex-android.sh \
-  packaging/flipex-monitor.desktop; do
+  scripts/build-flatpak.sh \
+  tests/flatpak-packaging.sh \
+  io.github.yoyote84.flipdexos.yml \
+  packaging/flipex-monitor.desktop \
+  packaging/flatpak/launch.sh \
+  packaging/flatpak/host-tool-proxy \
+  packaging/flatpak/io.github.yoyote84.flipdexos.desktop \
+  packaging/flatpak/io.github.yoyote84.flipdexos.svg; do
   [[ -f "$ROOT/$file" ]] || die "fichier du paquet absent : $file."
   mkdir -p "$STAGE/$(dirname "$file")"
   cp -a "$ROOT/$file" "$STAGE/$file"
@@ -92,6 +99,8 @@ primary_target=Linux aarch64, postmarketOS/Alpine, Plasma Desktop
 secondary_targets=Debian/Ubuntu Linux
 native_binaries_included=no
 android_apk_included=no
+flatpak_manifest_included=yes
+flatpak_bundle_included=no
 scrcpy_build=performed on the target device by scripts/install-scrcpy-latest.sh
 EOF
 
