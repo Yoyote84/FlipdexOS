@@ -97,7 +97,15 @@ require_scrcpy_option() {
 
 
 version_at_least() {
-  [[ "$(printf '%s\n' "$2" "$1" | sort -V | head -n 1)" == "$2" ]]
+  awk -v actual="$1" -v minimum="$2" 'BEGIN {
+    split(actual, a, "."); split(minimum, b, ".");
+    for (i = 1; i <= 3; i++) {
+      av = a[i] + 0; bv = b[i] + 0;
+      if (av > bv) exit 0;
+      if (av < bv) exit 1;
+    }
+    exit 0;
+  }'
 }
 
 check_tools() {
@@ -108,21 +116,23 @@ check_tools() {
   version_line="$("$SCRCPY_BIN" --version 2>&1 | head -n 1)"
   SCRCPY_VERSION="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' <<<"$version_line" | head -n 1 || true)"
   [[ -n "$SCRCPY_VERSION" ]] || die "Impossible de lire la version de scrcpy."
-  version_at_least "$SCRCPY_VERSION" "3.3.4" || die "scrcpy $SCRCPY_VERSION est trop ancien pour Android 17. Installe scrcpy 5.0.1 avec scripts/install-scrcpy-latest.sh."
+  version_at_least "$SCRCPY_VERSION" "5.0.1" || die "scrcpy $SCRCPY_VERSION est trop ancien pour le profil Android 17/One UI 9. Ce projet exige scrcpy 5.0.1 ou plus récent. Lance bash scripts/install-scrcpy-latest.sh."
   require_scrcpy_option "--new-display"
   require_scrcpy_option "--mouse"
   require_scrcpy_option "--mouse-bind"
   require_scrcpy_option "--keyboard"
   require_scrcpy_option "--video-bit-rate"
   require_scrcpy_option "--max-fps"
+  require_scrcpy_option "--no-downsize-on-error"
   info "Architecture : $(uname -m)"
+  if [[ -r /etc/os-release ]]; then
+    . /etc/os-release
+    info "Distribution : ${PRETTY_NAME:-Linux}"
+  fi
+  info "Session graphique : ${XDG_SESSION_TYPE:-inconnue} · ${XDG_CURRENT_DESKTOP:-bureau inconnu}"
   info "ADB : $("$ADB_BIN" version 2>&1 | head -n 1)"
   info "scrcpy : $version_line"
-  if version_at_least "$SCRCPY_VERSION" "5.0.1"; then
-    info "Version scrcpy récente; le décodage matériel est disponible selon les pilotes Linux."
-  else
-    warn "scrcpy $SCRCPY_VERSION est compatible, mais 5.0.1 est recommandé. Lance scripts/install-scrcpy-latest.sh."
-  fi
+  info "Option --no-downsize-on-error disponible : la définition demandée ne sera pas réduite silencieusement en cas d'erreur MediaCodec."
   info "Contrôle souris/clavier disponible."
 }
 
@@ -169,7 +179,62 @@ adb_phone() { "$ADB_BIN" -s "$SERIAL" "$@"; }
 detect_host_resolution() {
   local output geometry
   HOST_RESOLUTION_SOURCE="fallback Lenovo Duet 16:10"
+  HOST_RESOLUTION="$HOST_FALLBACK_RESOLUTION"
 
+  # Plasma/KDE (especially Plasma Wayland): prefer KScreen's active output mode.
+  if command -v kscreen-doctor >/dev/null 2>&1; then
+    output="$(kscreen-doctor -o 2>/dev/null || true)"
+    geometry="$(awk '
+      /^Output:/ {
+        active = ($0 ~ /enabled/ && $0 ~ /connected/)
+      }
+      active {
+        line = $0
+        while (match(line, /[0-9][0-9]*x[0-9][0-9]*@[0-9.]+[^ ]*/)) {
+          token = substr(line, RSTART, RLENGTH)
+          raw = token
+          sub(/@.*/, "", token)
+          if (raw ~ /\*/) {
+            print token
+            found = 1
+            exit
+          }
+          if (fallback == "") fallback = token
+          line = substr(line, RSTART + RLENGTH)
+        }
+        if (match($0, /Mode: *[0-9][0-9]*x[0-9][0-9]*/)) {
+          token = substr($0, RSTART, RLENGTH)
+          sub(/^Mode: */, "", token)
+          if ($0 ~ /\*/) { print token; found = 1; exit }
+          if (fallback == "") fallback = token
+        }
+      }
+      END { if (!found && fallback != "") print fallback }
+    ' <<<"$output")"
+    if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
+      HOST_RESOLUTION_SOURCE="kscreen-doctor"
+      HOST_RESOLUTION="$geometry"
+      return 0
+    fi
+  fi
+
+  # wlroots-compatible fallback.
+  if command -v wlr-randr >/dev/null 2>&1; then
+    output="$(wlr-randr 2>/dev/null || true)"
+    geometry="$(awk '
+      /current/ && match($0, /[0-9][0-9]*x[0-9][0-9]*/) {
+        print substr($0, RSTART, RLENGTH)
+        exit
+      }
+    ' <<<"$output")"
+    if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
+      HOST_RESOLUTION_SOURCE="wlr-randr"
+      HOST_RESOLUTION="$geometry"
+      return 0
+    fi
+  fi
+
+  # X11 or XWayland fallback.
   if command -v xrandr >/dev/null 2>&1; then
     output="$(xrandr --current 2>/dev/null || true)"
     geometry="$(awk '
@@ -195,40 +260,6 @@ detect_host_resolution() {
       return 0
     fi
   fi
-
-  if command -v wlr-randr >/dev/null 2>&1; then
-    output="$(wlr-randr 2>/dev/null || true)"
-    geometry="$(awk '
-      /current/ && match($0, /[0-9][0-9][0-9][0-9]*x[0-9][0-9][0-9][0-9]*/) {
-        print substr($0, RSTART, RLENGTH)
-        exit
-      }
-    ' <<<"$output")"
-    if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
-      HOST_RESOLUTION_SOURCE="wlr-randr"
-      HOST_RESOLUTION="$geometry"
-      return 0
-    fi
-  fi
-
-  if command -v kscreen-doctor >/dev/null 2>&1; then
-    output="$(kscreen-doctor -o 2>/dev/null || true)"
-    geometry="$(awk '
-      /Mode:/ && match($0, /[0-9][0-9][0-9][0-9]*x[0-9][0-9][0-9][0-9]*/) {
-        value = substr($0, RSTART, RLENGTH)
-        if ($0 ~ /\*!/) { print value; found = 1; exit }
-        if (fallback == "") fallback = value
-      }
-      END { if (!found && fallback != "") print fallback }
-    ' <<<"$output")"
-    if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
-      HOST_RESOLUTION_SOURCE="kscreen-doctor"
-      HOST_RESOLUTION="$geometry"
-      return 0
-    fi
-  fi
-
-  HOST_RESOLUTION="$HOST_FALLBACK_RESOLUTION"
 }
 
 match_flipex_render_size() {
