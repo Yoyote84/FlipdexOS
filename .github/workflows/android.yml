@@ -34,21 +34,15 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Installer Android 17 Preview (API 37)
+      - name: Installer la plateforme Android 17 et Build Tools 37
         shell: bash
         run: |
-          BUILD_TOOLS_PACKAGE="$(sdkmanager --list --channel=3 2>/dev/null \
-            | grep -oE 'build-tools;37\.[0-9.]+(-[[:alnum:].-]+)?' \
-            | sort -Vu \
-            | tail -n 1)"
-          if [[ -z "$BUILD_TOOLS_PACKAGE" ]]; then
-            echo "Aucune version Android Build-Tools 37 n'est publiée dans le canal Preview." >&2
-            exit 1
+          sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
+          # AGP 9.4 resolves compileSdk 37 via the conventional android-37
+          # directory; Android's SDK Manager currently installs API 37.0.
+          if [[ ! -e "$ANDROID_HOME/platforms/android-37" ]]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
           fi
-          BUILD_TOOLS_VERSION="${BUILD_TOOLS_PACKAGE#build-tools;}"
-          echo "Build-Tools sélectionné : $BUILD_TOOLS_VERSION"
-          sdkmanager --channel=3 "platforms;android-37" "$BUILD_TOOLS_PACKAGE"
-          echo "ANDROID_BUILD_TOOLS_VERSION=$BUILD_TOOLS_VERSION" >> "$GITHUB_ENV"
       - name: Tester les règles d'accès système
         run: gradle --no-daemon :app:testDebugUnitTest
 
