@@ -12,7 +12,7 @@ Le comportement recherché est un bureau sur un **écran virtuel secondaire**, a
 
 ### Application compagnon sur le téléphone
 
-`MainActivity` fournit l'état de l'appareil, l'état réel du Binder Shizuku et un diagnostic du UserService. Elle ne modifie pas les paramètres globaux à son ouverture.
+`MainActivity` fournit l'état de l'appareil, l'état réel du Binder Shizuku et un diagnostic du UserService. Elle ne modifie pas les paramètres globaux à son ouverture. Le UserService est facultatif pour le bureau externe : le client Chromebook utilise l'identité ADB shell pour ses paramètres et sa session scrcpy.
 
 Le UserService expose une interface AIDL limitée :
 - lecture de quatre propriétés système connues ;
