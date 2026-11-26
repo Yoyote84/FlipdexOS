@@ -171,8 +171,17 @@ grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--video-buffer=0' "$FAKE_ARGS"
 grep -Fxq -- '--no-downsize-on-error' "$FAKE_ARGS"
+grep -Fxq -- '--no-vd-destroy-content' "$FAKE_ARGS"
+grep -Fxq -- '--display-ime-policy=local' "$FAKE_ARGS"
+if grep -Fxq -- '--flex-display' "$FAKE_ARGS"; then
+  printf 'La résolution doit rester fixe par défaut.\n' >&2
+  exit 1
+fi
 grep -Fxq -- '--max-fps=30' "$FAKE_ARGS"
 grep -Fxq -- '--video-bit-rate=20M' "$FAKE_ARGS"
+grep -Fxq 'enable_freeform_support=0' "$FAKE_SETTINGS_FILE"
+grep -Fxq 'force_desktop_mode_on_external_displays=0' "$FAKE_SETTINGS_FILE"
+grep -Fxq 'enable_non_resizable_multi_window=1' "$FAKE_SETTINGS_FILE"
 if grep -Fxq -- '--no-control' "$FAKE_ARGS"; then
   printf 'Le mode de contrôle ne doit pas être désactivé.\n' >&2
   exit 1
@@ -198,6 +207,10 @@ grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
 export FAKE_KSCREEN_MODE=1920x1200
 bash "$ROOT/scripts/flipex-monitor.sh" --display 2560x1440/320
 grep -Fxq -- '--new-display=2560x1440/320' "$FAKE_ARGS"
+
+# Dynamic resize is explicit opt-in; fixed resolution remains default.
+bash "$ROOT/scripts/flipex-monitor.sh" --flex-display
+grep -Fxq -- '--flex-display' "$FAKE_ARGS"
 
 # Android 16: virtual display path and physical UHID mouse remain selectable.
 export FAKE_SDK=36
@@ -232,5 +245,29 @@ if bash "$ROOT/scripts/flipex-monitor.sh" --check; then
 fi
 export FAKE_SCRCPY_VERSION=5.0.1
 bash "$ROOT/scripts/flipex-monitor.sh" --check
+
+# Manual recovery restores the original saved values, never hardcodes zero.
+serial_key="$(printf 'FAKE123' | cksum | awk '{print $1 "-" $2}')"
+mkdir -p "$HOME/.local/state/flipdex-monitor"
+printf 'enable_freeform_support=0\nforce_desktop_mode_on_external_displays=1\nenable_non_resizable_multi_window=0\n' > "$HOME/.local/state/flipdex-monitor/$serial_key.state"
+printf 'enable_freeform_support=1\nforce_desktop_mode_on_external_displays=1\nenable_non_resizable_multi_window=1\n' > "$FAKE_SETTINGS_FILE"
+bash "$ROOT/scripts/flipex-monitor.sh" --restore
+grep -Fxq 'enable_freeform_support=0' "$FAKE_SETTINGS_FILE"
+grep -Fxq 'force_desktop_mode_on_external_displays=1' "$FAKE_SETTINGS_FILE"
+grep -Fxq 'enable_non_resizable_multi_window=0' "$FAKE_SETTINGS_FILE"
+[[ ! -f "$HOME/.local/state/flipdex-monitor/$serial_key.state" ]]
+
+# Shizuku must be present and its server process must be visible before settings change.
+export FAKE_SHIZUKU=missing
+if bash "$ROOT/scripts/flipex-monitor.sh" >/dev/null 2>&1; then
+  printf 'FlipEx Monitor a accepté un téléphone sans Shizuku installé.\n' >&2
+  exit 1
+fi
+export FAKE_SHIZUKU=present
+export FAKE_SHIZUKU_SERVER=stopped
+if bash "$ROOT/scripts/flipex-monitor.sh" >/dev/null 2>&1; then
+  printf 'FlipEx Monitor a accepté Shizuku arrêté.\n' >&2
+  exit 1
+fi
 
 printf 'Tous les tests FlipEx Monitor sont passés.\n'
