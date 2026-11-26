@@ -106,6 +106,7 @@ set -Eeuo pipefail
 if [[ "${1:-}" == "--help" ]]; then
   cat <<'HELP'
 --new-display
+--start-app
 --display-id
 --mouse
 --keyboard
