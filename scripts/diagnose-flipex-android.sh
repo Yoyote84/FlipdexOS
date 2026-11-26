@@ -8,7 +8,7 @@ OUTPUT=""
 usage() {
   cat <<'EOF'
 FlipdexOS — diagnostic Android / Shizuku / FlipdexOS (lecture seule)
-Usage: diagnose-flipdex-android.sh [--serial SERIAL] [--output FILE]
+Usage: diagnose-flipex-android.sh [--serial SERIAL] [--output FILE]
 Options:
   --serial SERIAL  Sélectionner un appareil ADB précis.
   --output FILE    Enregistrer aussi le rapport dans FILE.
@@ -92,7 +92,7 @@ report() {
   fi
 
   printf '%s\n' "============================================================"
-  printf '%s\n' "FlipdexOS — rapport de compatibilité FlipdexOS / Android"
+  printf '%s\n' "FlipdexOS — rapport de compatibilité Android"
   printf '%s\n' "============================================================"
   printf 'Date du rapport : %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')"
   printf 'Ordinateur hôte : %s\n' "$host_os"
