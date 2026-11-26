@@ -261,17 +261,18 @@ grep -Fxq 'force_desktop_mode_on_external_displays=1' "$FAKE_SETTINGS_FILE"
 grep -Fxq 'enable_non_resizable_multi_window=0' "$FAKE_SETTINGS_FILE"
 [[ ! -f "$HOME/.local/state/flipdex-monitor/$serial_key.state" ]]
 
-# Shizuku must be present and its server process must be visible before settings change.
+# Shizuku is optional for the desktop session: ADB shell handles the
+# desktop settings and scrcpy launch, even if Shizuku is unavailable.
 export FAKE_SHIZUKU=missing
-if bash "$ROOT/scripts/flipex-monitor.sh" >/dev/null 2>&1; then
-  printf 'FlipdexOS Monitor a accepté un téléphone sans Shizuku installé.\n' >&2
-  exit 1
-fi
+OUTPUT="$(bash "$ROOT/scripts/flipex-monitor.sh" 2>&1)"
+grep -Fq "Shizuku n'est pas installé" <<<"$OUTPUT"
+grep -Fxq -- '--start-app=io.github.yoyote84.flipdexos' "$FAKE_ARGS"
+grep -Fxq 'enable_freeform_support=0' "$FAKE_SETTINGS_FILE"
+
 export FAKE_SHIZUKU=present
 export FAKE_SHIZUKU_SERVER=stopped
-if bash "$ROOT/scripts/flipex-monitor.sh" >/dev/null 2>&1; then
-  printf 'FlipdexOS Monitor a accepté Shizuku arrêté.\n' >&2
-  exit 1
-fi
+OUTPUT="$(bash "$ROOT/scripts/flipex-monitor.sh" 2>&1)"
+grep -Fq "ne semble pas actif" <<<"$OUTPUT"
+grep -Fxq -- '--start-app=io.github.yoyote84.flipdexos' "$FAKE_ARGS"
 
 printf 'Tous les tests FlipdexOS Monitor sont passés.\n'
