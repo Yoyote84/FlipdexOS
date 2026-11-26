@@ -16,7 +16,7 @@ Le contrôle est actif : **ne pas ajouter `--no-control`**, car cette option dé
 
 ## Commande depuis le menu du Chromebook
 
-Après installation, ouvre **FlipEx Monitor — Connexion** depuis le menu des applications. Le lanceur choisit automatiquement l'unique téléphone ADB autorisé et démarre FlipEx puis le bureau virtuel. Le lanceur de menu ne demande pas d'ouvrir un terminal.
+Après installation, ouvre **FlipEx Monitor — Connexion** depuis le menu des applications. Le lanceur choisit automatiquement l'unique téléphone ADB autorisé, détecte la résolution du Chromebook et démarre FlipEx puis le bureau virtuel. Le lanceur de menu ne demande pas d'ouvrir un terminal.
 
 En cas d'erreur, une notification du bureau est affichée lorsque `notify-send` ou `kdialog` est disponible. Une notification indique également que le téléphone est connecté et que le bureau s'ouvre.
 
@@ -91,10 +91,11 @@ Sur le Chromebook Linux (Debian/Ubuntu ARM64) :
 
 ```bash
 sudo apt update
-sudo apt install adb scrcpy bash
+sudo apt install adb bash git sudo
+bash scripts/install-scrcpy-latest.sh
 ```
 
-Une version de scrcpy proposant `--new-display`, `--mouse` et `--keyboard` est nécessaire. Le lanceur vérifie les options disponibles au démarrage et affiche une erreur si elles manquent. `libnotify-bin` ou `kdialog` est facultatif pour les notifications de bureau.
+Le script compile pour l'architecture Linux locale et installe la version officielle scrcpy 5.0.1 avec ses dépendances. C'est la voie recommandée sur ARM64 : le binaire statique officiel publié pour Linux est x86_64, tandis que le guide Linux officiel recommande une compilation locale pour les autres architectures. Le lanceur exige au minimum scrcpy 3.3.4 et recommande 5.0.1. `libnotify-bin` ou `kdialog` est facultatif pour les notifications de bureau.
 
 Le Chromebook doit disposer d'une session graphique Linux (Wayland ou X11). Le câble USB-C transporte ici ADB et le flux vidéo compressé ; il ne transforme pas le Chromebook en moniteur HDMI natif.
 
@@ -130,6 +131,10 @@ flipex-monitor --serial NUMERO_ADB
 ```
 
 La commande de restauration remet à zéro les trois réglages du mode bureau gérés par le lanceur et supprime le réglage overlay. Elle ne désinstalle pas FlipEx. Pour restaurer aussi les réglages propres à FlipEx, utiliser **Restore stock settings** dans l'application Android.
+
+## Android 17 / One UI 9
+
+Le client Linux prend en charge Android API 37 avec un scrcpy récent. Il détecte aussi le `targetSdk` de l'APK FlipEx. Si l'APK cible encore API 36, il l'indique clairement : l'avertissement de compatibilité Android appartient à l'application FlipEx et doit être corrigé dans son dépôt Android (mise à jour du manifeste, compilation SDK et validation des fenêtres multi-écrans). FlipdexOS ne modifie pas l'APK installée sur le téléphone.
 
 ## Tests et développement
 
