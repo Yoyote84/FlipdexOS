@@ -5,7 +5,13 @@ set -Eeuo pipefail
 
 VERSION="0.8.0"
 ADB_BIN="${ADB:-adb}"
-SCRCPY_BIN="${SCRCPY:-scrcpy}"
+if [[ -n "${SCRCPY:-}" ]]; then
+  SCRCPY_BIN="$SCRCPY"
+elif [[ -x /usr/local/bin/scrcpy ]]; then
+  SCRCPY_BIN="/usr/local/bin/scrcpy"
+else
+  SCRCPY_BIN="scrcpy"
+fi
 SERIAL="${ANDROID_SERIAL:-}"
 DISPLAY_SPEC="auto"
 DISPLAY_MODE="virtual"
