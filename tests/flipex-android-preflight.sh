@@ -67,7 +67,7 @@ case "${1:-}" in
           *) : ;;
         esac
         ;;
-      service) printf 'Found 120 services:\n' ;;
+      ps) printf 'USER PID PPID VSZ RSS WCHAN ADDR S NAME\nshell 2234 1 1000 500 0 0 S shizuku_server\n' ;;
       *) : ;;
     esac
     ;;
@@ -85,6 +85,7 @@ grep -Fq 'Application : installée (13.6.0)' <<<"$OUTPUT"
 grep -Fq 'Application : installée (0.3.4)' <<<"$OUTPUT"
 grep -Fq "targetSdk de l'APK installé : 36" <<<"$OUTPUT"
 grep -Fq 'Lecture seule' <<<"$OUTPUT"
+grep -Fq 'Processus serveur : détecté' <<<"$OUTPUT"
 
 # The diagnostic must remain useful when optional packages are absent.
 export FAKE_SHIZUKU=missing
