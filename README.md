@@ -115,14 +115,23 @@ La méthode conserve ADB et scrcpy sur le système hôte : ils doivent accéder 
 
 **Attention sécurité :** le droit D-Bus `org.freedesktop.Flatpak` nécessaire au lancement de commandes hôte est puissant. Ce Flatpak est prévu pour une installation locale de confiance sur ton Chromebook, pas pour une publication Flathub sans remplacer ce pont par une intégration plus restrictive.
 
-Depuis la racine du dépôt :
+**Méthode recommandée :** récupérer le bundle compilé par GitHub Actions, pour éviter de télécharger le SDK complet sur le Chromebook. Ouvre l'onglet [Actions du dépôt](https://github.com/Yoyote84/FlipdexOS/actions/workflows/flatpak.yml), attends la réussite de « Construire le Flatpak ARM64 », puis télécharge l'artefact `flipdexos-monitor-flatpak-aarch64` et extrais l'archive ZIP.
+
+Sur le Chromebook, depuis le dossier contenant le fichier `.flatpak` :
+
+```bash
+flatpak install --user --bundle ./flipdexos-monitor-aarch64.flatpak
+flatpak run io.github.yoyote84.flipdexos
+```
+
+ADB et scrcpy doivent déjà être installés sur le système hôte. Pour les développeurs qui souhaitent construire localement depuis la racine du dépôt :
 
 ```bash
 bash scripts/install-scrcpy-latest.sh
 bash scripts/build-flatpak.sh --install
 ```
 
-Le premier script installe ADB et compile scrcpy pour l'architecture du Chromebook. Le second construit le bundle Flatpak ARM64, vérifie son SHA-256 puis l'installe pour l'utilisateur. Le lanceur **FlipdexOS — FlipEx Monitor** apparaît dans le menu Plasma et ouvre un terminal pour afficher les diagnostics. La construction seule, sans installation, se fait avec `bash scripts/build-flatpak.sh`.
+Le premier script installe ADB et compile scrcpy pour l'architecture du Chromebook. Le second construit le bundle Flatpak ARM64, vérifie son SHA-256 puis l'installe pour l'utilisateur. Pour la méthode normale, la compilation CI ARM64 évite cette étape lourde sur le Duet. Le lanceur **FlipdexOS — FlipEx Monitor** apparaît dans le menu Plasma et ouvre un terminal pour afficher les diagnostics. La construction seule, sans installation, se fait avec `bash scripts/build-flatpak.sh`.
 
 Pour démarrer ou diagnostiquer depuis le terminal :
 
