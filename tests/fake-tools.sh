@@ -110,18 +110,25 @@ exit 1
 WLR
 cat > "$TMP/kscreen-doctor" <<'KSCREEN'
 #!/usr/bin/env bash
-exit 1
+[[ "${1:-}" == "-o" ]] || exit 2
+mode="$FAKE_KSCREEN_MODE"
+[[ -n "$mode" ]] || mode="none"
+[[ "$mode" != "none" ]] || exit 1
+printf 'Output: 1 eDP-1 enabled connected priority 1 Panel Modes: 0: %s@60*! 1: 1280x720@60\n' "$mode"
 KSCREEN
 chmod +x "$TMP/wlr-randr" "$TMP/kscreen-doctor"
 export PATH="$TMP:$PATH"
+export FAKE_KSCREEN_MODE=1920x1200
 export FAKE_HOST_MODE=1920x1200
 export ADB="$TMP/adb"
 export SCRCPY="$TMP/scrcpy"
 export ANDROID_SERIAL=FAKE123
 
 # Default mode uses direct virtual display and SDK mouse, not the overlay.
-bash "$ROOT/scripts/flipex-monitor.sh"
+DEFAULT_OUTPUT="$(bash "$ROOT/scripts/flipex-monitor.sh")"
+printf '%s\n' "$DEFAULT_OUTPUT"
 grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
+grep -Fq '1920x1200 (kscreen-doctor)' <<<"$DEFAULT_OUTPUT"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
@@ -137,23 +144,27 @@ fi
 
 
 # 16:9, 4K and 16:10 profiles match the true FlipEx 1080p rendering surface.
-export FAKE_HOST_MODE=1920x1080
+export FAKE_KSCREEN_MODE=1920x1080
+export FAKE_HOST_MODE=none
 bash "$ROOT/scripts/flipex-monitor.sh"
 grep -Fxq -- '--new-display=1920x1080/160' "$FAKE_ARGS"
 
-export FAKE_HOST_MODE=3840x2160
+export FAKE_KSCREEN_MODE=3840x2160
 bash "$ROOT/scripts/flipex-monitor.sh"
 grep -Fxq -- '--new-display=1920x1080/160' "$FAKE_ARGS"
 
+export FAKE_KSCREEN_MODE=none
 export FAKE_HOST_MODE=none
 bash "$ROOT/scripts/flipex-monitor.sh"
 grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
 
+export FAKE_KSCREEN_MODE=1920x1200
 bash "$ROOT/scripts/flipex-monitor.sh" --display 2560x1440/320
 grep -Fxq -- '--new-display=2560x1440/320' "$FAKE_ARGS"
 
 # Android 16: virtual display path and physical UHID mouse remain selectable.
 export FAKE_SDK=36
+export FAKE_KSCREEN_MODE=1920x1200
 bash "$ROOT/scripts/flipex-monitor.sh" --display-mode virtual --mouse uhid --display 1600x900/160 --fps 25 --bit-rate 6M
 grep -Fxq -- '--new-display=1600x900/160' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=uhid' "$FAKE_ARGS"
