@@ -9,7 +9,6 @@ HOST_TOOLS="$APP_BIN/host-tools"
 MONITOR_SCRIPT="/app/share/flipdexos/scripts/flipex-monitor.sh"
 
 # The Chromebook host may export a locale that is not installed in the runtime.
-# The UI strings are already French; a UTF-8 C locale avoids startup warnings.
 export LANG="C.UTF-8"
 export LC_ALL="C.UTF-8"
 export PATH="$HOST_TOOLS:$APP_BIN:/usr/bin:/bin"
@@ -32,11 +31,22 @@ if [ ! -r "$MONITOR_SCRIPT" ]; then
   exit 127
 fi
 
+# Diagnostic/list/restore actions do not need a graphical session.
+case "${1:-}" in
+  --check|--list|--restore|--version|-h|--help)
+    ;;
+  *)
+    if [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${DISPLAY:-}" ]; then
+      printf 'FlipdexOS Monitor : aucune session graphique détectée (Wayland/X11).\n' >&2
+      printf 'Lance FlipdexOS depuis Plasma/Discover dans la session graphique active.\n' >&2
+      exit 70
+    fi
+    ;;
+esac
+
 # Force the monitor to use the host binaries via the allow-listed proxies.
-# This avoids accidentally selecting a stale /usr/local/bin/scrcpy in the
-# sandbox while the working scrcpy installation is on the Chromebook host.
 export ADB="${ADB:-$HOST_TOOLS/adb}"
 export SCRCPY="${SCRCPY:-$HOST_TOOLS/scrcpy}"
 
-printf '[FlipdexOS Monitor] Passerelle Flatpak prête ; ADB et scrcpy proviennent du Chromebook hôte.\n'
+printf '[FlipdexOS Monitor] Relais hôte prêt ; session graphique : %s / %s.\n' "${XDG_SESSION_TYPE:-inconnue}" "${XDG_CURRENT_DESKTOP:-inconnu}"
 exec /usr/bin/bash "$MONITOR_SCRIPT" "$@"
