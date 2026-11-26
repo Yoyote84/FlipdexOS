@@ -1,6 +1,14 @@
 plugins {
     id "com.android.application"
 }
+
+def releaseKeystorePath = System.getenv("FLIPDEX_KEYSTORE_PATH")
+def releaseStorePassword = System.getenv("FLIPDEX_KEYSTORE_PASSWORD")
+def releaseKeyAlias = System.getenv("FLIPDEX_KEY_ALIAS")
+def releaseKeyPassword = System.getenv("FLIPDEX_KEY_PASSWORD")
+def hasReleaseSigning = [releaseKeystorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+        .every { value -> value != null && !value.trim().isEmpty() }
+        && file(releaseKeystorePath).isFile()
 android {
     namespace "io.github.yoyote84.flipdexos"
     compileSdk 37
@@ -9,12 +17,23 @@ android {
         applicationId "io.github.yoyote84.flipdexos"
         minSdk 31
         targetSdk 36
-        versionCode 1
-        versionName "0.1.0-alpha01"
+        versionCode 2
+        versionName "0.1.0-alpha02"
     }
     buildFeatures {
         aidl true
         buildConfig true
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -28,6 +47,9 @@ android {
         release {
             minifyEnabled false
             shrinkResources false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
