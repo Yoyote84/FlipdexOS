@@ -384,6 +384,90 @@ detect_flipex_target_sdk() {
   fi
 }
 
+state_file_for_device() {
+  local serial_key
+  [[ "$SERIAL" =~ ^[A-Za-z0-9._:%\[\]-]+$ ]] || die "identifiant ADB non standard : impossible de créer une sauvegarde sûre."
+  serial_key="$(printf '%s' "$SERIAL" | cksum | awk '{print $1 "-" $2}')"
+  STATE_DIR="$HOME/.local/state/flipdex-monitor"
+  STATE_FILE="$STATE_DIR/$serial_key.state"
+}
+
+read_global_setting() {
+  adb_phone shell settings get global "$1" 2>/dev/null | tr -d '\r' | sed -n '1p'
+}
+
+read_saved_setting() {
+  awk -F= -v wanted="$1" '$1 == wanted { sub(/^[^=]*=/, ""); print; exit }' "$STATE_FILE"
+}
+
+valid_saved_setting() {
+  [[ "$1" == "null" || "$1" == "0" || "$1" == "1" ]]
+}
+
+save_settings_snapshot() {
+  local freeform force_desktop non_resizable temp_file
+  state_file_for_device
+  [[ ! -e "$STATE_FILE" ]] || die "une sauvegarde de session antérieure existe. Lance --restore avant une nouvelle session."
+  mkdir -p "$STATE_DIR"
+  freeform="$(read_global_setting enable_freeform_support)"
+  force_desktop="$(read_global_setting force_desktop_mode_on_external_displays)"
+  non_resizable="$(read_global_setting enable_non_resizable_multi_window)"
+  valid_saved_setting "$freeform" || die "impossible de sauvegarder enable_freeform_support sans risque."
+  valid_saved_setting "$force_desktop" || die "impossible de sauvegarder force_desktop_mode_on_external_displays sans risque."
+  valid_saved_setting "$non_resizable" || die "impossible de sauvegarder enable_non_resizable_multi_window sans risque."
+  temp_file="$(mktemp "$STATE_DIR/.session.XXXXXX")"
+  {
+    printf 'enable_freeform_support=%s\n' "$freeform"
+    printf 'force_desktop_mode_on_external_displays=%s\n' "$force_desktop"
+    printf 'enable_non_resizable_multi_window=%s\n' "$non_resizable"
+  } > "$temp_file"
+  chmod 600 "$temp_file"
+  mv "$temp_file" "$STATE_FILE"
+  SETTINGS_SNAPSHOT_ACTIVE=1
+  info "Sauvegarde des trois réglages Android créée."
+}
+
+restore_saved_settings() {
+  state_file_for_device
+  if [[ ! -f "$STATE_FILE" ]]; then
+    warn "aucune sauvegarde précédente trouvée; aucun réglage n'a été remis arbitrairement à zéro."
+    return 0
+  fi
+  local key value actual failed=0
+  for key in enable_freeform_support force_desktop_mode_on_external_displays enable_non_resizable_multi_window; do
+    value="$(read_saved_setting "$key")"
+    valid_saved_setting "$value" || {
+      warn "valeur de sauvegarde invalide pour $key; fichier conservé."
+      return 1
+    }
+    if [[ "$value" == "null" ]]; then
+      adb_phone shell settings delete global "$key" >/dev/null 2>&1 || failed=1
+    else
+      adb_phone shell settings put global "$key" "$value" >/dev/null 2>&1 || failed=1
+    fi
+    actual="$(read_global_setting "$key")"
+    [[ "$actual" == "$value" ]] || failed=1
+  done
+  if (( failed == 0 )); then
+    rm -f "$STATE_FILE"
+    SETTINGS_SNAPSHOT_ACTIVE=0
+    info "Les valeurs Android antérieures ont été restaurées."
+    return 0
+  fi
+  warn "restauration incomplète; sauvegarde conservée dans $STATE_FILE."
+  return 1
+}
+
+apply_desktop_settings() {
+  local key actual
+  for key in enable_freeform_support force_desktop_mode_on_external_displays enable_non_resizable_multi_window; do
+    adb_phone shell settings put global "$key" 1 >/dev/null 2>&1 || die "Android a refusé le réglage $key."
+    actual="$(read_global_setting "$key")"
+    [[ "$actual" == "1" ]] || die "Android n'a pas confirmé le réglage $key."
+  done
+  info "Réglages du mode bureau appliqués et vérifiés."
+}
+
 overlay_create() {
   local geometry="$1"
   local i=0 id=""
@@ -421,16 +505,19 @@ overlay_destroy() {
   info "Ancien réglage d'écran overlay restauré."
 }
 
-cleanup() { overlay_destroy; }
+cleanup() {
+  local status=$?
+  trap - EXIT
+  overlay_destroy
+  if [[ "$SETTINGS_SNAPSHOT_ACTIVE" == "1" ]]; then
+    restore_saved_settings || warn "restauration automatique incomplète; utilise --restore."
+  fi
+  exit "$status"
+}
 
 restore_settings() {
   select_device
-  info "Restauration des réglages du mode bureau sur $SERIAL…"
-  adb_phone shell settings put global enable_freeform_support 0
-  adb_phone shell settings put global force_desktop_mode_on_external_displays 0
-  adb_phone shell settings put global enable_non_resizable_multi_window 0
-  adb_phone shell settings delete global overlay_display_devices >/dev/null 2>&1 || true
-  info "Réglages remis à 0. FlipEx reste installé."
+  restore_saved_settings
 }
 
 start_monitor() {
@@ -440,6 +527,7 @@ start_monitor() {
   check_tools
   select_device
   detect_android_version
+  detect_shizuku
   detect_flipex_target_sdk
   resolve_display_profile
   validate_options
@@ -449,11 +537,10 @@ start_monitor() {
   package_path="$(adb_phone shell pm path dev.ved.flipdex 2>/dev/null | tr -d '\r' || true)"
   [[ "$package_path" == package:* ]] || die "l'application Android FlipEx (dev.ved.flipdex) ne semble pas installée."
 
-  info "Téléphone : ${model:-modèle non identifié} · Android API $ANDROID_SDK"
+  info "Téléphone : ${model:-modèle non identifié} · Android ${ANDROID_RELEASE:-inconnu} (API $ANDROID_SDK) · One UI $ONE_UI_NAME"
+  save_settings_snapshot
   info "Activation des réglages nécessaires au mode bureau…"
-  adb_phone shell settings put global enable_freeform_support 1
-  adb_phone shell settings put global force_desktop_mode_on_external_displays 1
-  adb_phone shell settings put global enable_non_resizable_multi_window 1
+  apply_desktop_settings
 
   info "Démarrage de FlipEx sur le téléphone…"
   launch_output="$(adb_phone shell am start -n "$FLIPEX_COMPONENT" 2>&1 | tr -d '\r' || true)"
