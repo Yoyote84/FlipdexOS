@@ -49,6 +49,16 @@ jobs:
       - name: Compiler l'APK debug
         run: gradle --no-daemon :app:assembleDebug
 
+      - name: Tester le démarrage sur émulateur Android 16
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7_pro
+          disable-animations: true
+          script: bash tests/android-emulator-smoke.sh
+
       - name: Vérifier et calculer la somme SHA-256
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
