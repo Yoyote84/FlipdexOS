@@ -27,12 +27,14 @@ jobs:
         run: |
           bash -n scripts/flipex-monitor.sh
           bash -n scripts/install-system.sh
+          bash -n scripts/install-scrcpy-latest.sh
           bash -n tests/fake-tools.sh
 
       - name: Analyser les scripts
         run: |
           shellcheck scripts/flipex-monitor.sh
           shellcheck scripts/install-system.sh
+          shellcheck scripts/install-scrcpy-latest.sh
           shellcheck tests/fake-tools.sh
 
       - name: Tester les deux chemins d'affichage
@@ -42,6 +44,7 @@ jobs:
         run: |
           bash scripts/flipex-monitor.sh --help
           bash scripts/flipex-monitor.sh --version
+          bash scripts/install-scrcpy-latest.sh --help || true
           if bash scripts/flipex-monitor.sh --fps 61; then
             echo "Une valeur FPS invalide a été acceptée." >&2
             exit 1
