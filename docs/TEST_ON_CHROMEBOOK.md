@@ -54,8 +54,10 @@ Sur le téléphone :
 2. Branche le téléphone au Chromebook en USB-C.
 3. Déverrouille-le et accepte l'empreinte RSA ADB.
 4. Vérifie que FlipEx est installé et configuré avec Shizuku.
-5. Dans FlipEx → Experimental → DeX window owner, privilégie **Shizuku** pour éviter la fenêtre d'accessibilité appelée **FlipEx DeX screen**.
-6. Laisse **Test display on the phone** désactivé : ce n'est pas nécessaire au flux scrcpy.
+5. Dans Shizuku, démarre le serveur en mode ADB et vérifie que l'application affiche **en cours d'exécution**.
+6. Dans Shizuku → Applications autorisées, vérifie que FlipEx est autorisé. Le processus visible par ADB est seulement un indice : seul FlipEx peut valider son Binder.
+7. Dans FlipEx → Experimental → DeX window owner, privilégie **Shizuku** pour éviter la fenêtre d'accessibilité appelée **FlipEx DeX screen**.
+8. Laisse **Test display on the phone** désactivé : ce n'est pas nécessaire au flux scrcpy.
 
 Sur le Chromebook :
 
@@ -63,9 +65,11 @@ Sur le Chromebook :
 adb devices -l
 adb shell getprop ro.build.version.sdk
 adb shell dumpsys package dev.ved.flipdex | grep -E 'versionName|targetSdk'
+adb shell ps -A | grep -E 'shizuku_server|libshizuku\.so' || true
+bash scripts/diagnose-flipex-android.sh
 ```
 
-Pour Android 17, le SDK attendu est 37. Si FlipEx indique `targetSdk=36`, l'avertissement de compatibilité appartient à l'APK Android. FlipdexOS sait le détecter, mais ne peut pas reconstruire l'APK issue du dépôt Android externe.
+Pour Android 17, le SDK attendu est 37. Le diagnostic est en lecture seule et ne prouve pas que le Binder Shizuku fonctionne dans FlipEx. Si FlipEx indique `targetSdk=36`, l'avertissement de compatibilité appartient à l'APK Android. FlipdexOS sait le détecter, mais ne peut pas reconstruire l'APK issue du dépôt Android externe.
 
 ## 5. Vérifier Plasma et lancer DeX avec une résolution nette
 
@@ -94,7 +98,7 @@ Le profil `auto` détecte la définition de l'écran et l'aligne sur la surface 
 | 1920 × 1080 (16:9) | 1920 × 1080 |
 | 3840 × 2160 (4K) | 1920 × 1080 |
 
-Réglages par défaut : H.264, 20 Mbit/s, 30 FPS, tampon vidéo minimal et refus de réduction automatique de résolution en cas d'erreur d'encodeur. Un flux scrcpy 4K au-dessus d'une source DeX 1080p ne rendrait pas le texte plus net.
+Réglages par défaut : H.264, 20 Mbit/s, 30 FPS, tampon vidéo minimal et refus de réduction automatique de résolution en cas d'erreur d'encodeur. La résolution Android reste fixe pendant le redimensionnement de la fenêtre. L'option `--flex-display` adapte la surface à la fenêtre; évite-la pendant le test de netteté, car réduire la fenêtre peut aussi réduire la définition. Un flux scrcpy 4K au-dessus d'une source DeX 1080p ne rendrait pas le texte plus net.
 
 Pour une première comparaison manuelle :
 
@@ -121,7 +125,7 @@ En mode `uhid`, le pointeur est capturé. **Alt gauche** le libère et le repren
 
 ## 7. Rapport de diagnostic
 
-Ferme scrcpy pour arrêter le flux. Si un problème persiste, exécute :
+Ferme scrcpy pour arrêter le flux : FlipdexOS restaure automatiquement les réglages globaux à leurs valeurs initiales. En cas d'arrêt brutal, exécute `flipex-monitor --restore` pour rétablir la sauvegarde. Ne remplace pas cette commande par des valeurs forcées à zéro. Si un problème persiste, exécute :
 
 ```bash
 uname -a
