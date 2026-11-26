@@ -37,6 +37,9 @@ ANDROID_RELEASE=""
 ONE_UI_CODE=""
 ONE_UI_NAME="non détectée"
 SHIZUKU_VERSION=""
+STATE_DIR=""
+STATE_FILE=""
+SETTINGS_SNAPSHOT_ACTIVE=0
 
 gui_notify() {
   local urgency="${1:-normal}" title="${2:-FlipEx Monitor}" message="${3:-}"
@@ -387,7 +390,7 @@ detect_flipex_target_sdk() {
 
 state_file_for_device() {
   local serial_key
-  [[ "$SERIAL" =~ ^[A-Za-z0-9._:%\[\]-]+$ ]] || die "identifiant ADB non standard : impossible de créer une sauvegarde sûre."
+  [[ -n "$SERIAL" ]] || die "aucun identifiant ADB sélectionné; impossible de créer une sauvegarde sûre."
   serial_key="$(printf '%s' "$SERIAL" | cksum | awk '{print $1 "-" $2}')"
   STATE_DIR="$HOME/.local/state/flipdex-monitor"
   STATE_FILE="$STATE_DIR/$serial_key.state"
