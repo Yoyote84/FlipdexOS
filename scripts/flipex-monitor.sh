@@ -337,9 +337,34 @@ validate_options() {
   [[ "$DISPLAY_MODE" == "virtual" || "$DISPLAY_MODE" == "overlay" ]] || die "mode écran invalide : virtual ou overlay."
 }
 
+format_oneui_version() {
+  local code="$1"
+  if [[ "$code" =~ ^[0-9]+$ ]] && (( code > 0 )); then
+    printf '%s.%s\n' "$((code / 10000))" "$(((code / 100) % 100))"
+  else
+    printf 'non détectée\n'
+  fi
+}
+
 detect_android_version() {
   ANDROID_SDK="$(adb_phone shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r' || true)"
+  ANDROID_RELEASE="$(adb_phone shell getprop ro.build.version.release 2>/dev/null | tr -d '\r' || true)"
+  ONE_UI_CODE="$(adb_phone shell getprop ro.build.version.oneui 2>/dev/null | tr -d '\r' || true)"
   [[ "$ANDROID_SDK" =~ ^[0-9]+$ ]] || ANDROID_SDK="0"
+  ONE_UI_NAME="$(format_oneui_version "$ONE_UI_CODE")"
+  info "Android : ${ANDROID_RELEASE:-inconnue} · API $ANDROID_SDK · One UI $ONE_UI_NAME"
+}
+
+detect_shizuku() {
+  local package_path package_info
+  package_path="$(adb_phone shell pm path moe.shizuku.privileged.api 2>/dev/null | tr -d '\r' | sed -n '1p' || true)"
+  [[ "$package_path" == package:* ]] || die "Shizuku n'est pas installé. Installe-le depuis une source officielle avant de lancer FlipEx."
+  package_info="$(adb_phone shell dumpsys package moe.shizuku.privileged.api 2>/dev/null | tr -d '\r' || true)"
+  SHIZUKU_VERSION="$(grep -oE 'versionName=[^[:space:]]+' <<<"$package_info" | head -n 1 | cut -d= -f2 || true)"
+  SHIZUKU_PROCESS="$(adb_phone shell ps -A 2>/dev/null | tr -d '\r' | grep -E 'shizuku_server|libshizuku\.so' || true)"
+  [[ -n "$SHIZUKU_PROCESS" ]] || die "Shizuku est installé (${SHIZUKU_VERSION:-version inconnue}), mais son serveur n'est pas détecté. Ouvre Shizuku, démarre son serveur en mode ADB, puis relance."
+  info "Shizuku : ${SHIZUKU_VERSION:-version inconnue} · processus serveur détecté."
+  warn "La détection du processus ne garantit pas que le Binder Shizuku fonctionne. Vérifie dans l'application Shizuku que FlipEx est autorisé."
 }
 
 
