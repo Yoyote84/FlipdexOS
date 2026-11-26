@@ -416,17 +416,16 @@ save_settings_snapshot() {
   valid_saved_setting "$freeform" || die "impossible de sauvegarder enable_freeform_support sans risque."
   valid_saved_setting "$force_desktop" || die "impossible de sauvegarder force_desktop_mode_on_external_displays sans risque."
   valid_saved_setting "$non_resizable" || die "impossible de sauvegarder enable_non_resizable_multi_window sans risque."
+  if [[ "$DISPLAY_MODE" == "overlay" ]]; then
+    overlay_value="$(read_global_setting overlay_display_devices)"
+    [[ "$overlay_value" == "null" || "$overlay_value" =~ ^[-A-Za-z0-9._,:/+]{1,512}$ ]] || die "valeur overlay_display_devices inattendue; aucun réglage n'a été changé."
+  fi
   temp_file="$(mktemp "$STATE_DIR/.session.XXXXXX")"
   {
     printf 'enable_freeform_support=%s\n' "$freeform"
     printf 'force_desktop_mode_on_external_displays=%s\n' "$force_desktop"
     printf 'enable_non_resizable_multi_window=%s\n' "$non_resizable"
     if [[ "$DISPLAY_MODE" == "overlay" ]]; then
-      overlay_value="$(read_global_setting overlay_display_devices)"
-      [[ "$overlay_value" == "null" || "$overlay_value" =~ ^[-A-Za-z0-9._,:/+]{1,512}$ ]] || {
-        rm -f "$temp_file"
-        die "valeur overlay_display_devices inattendue; aucun réglage n'a été changé."
-      }
       printf 'overlay_display_devices=%s\n' "$overlay_value"
     fi
   } > "$temp_file"
