@@ -570,7 +570,7 @@ start_monitor() {
   package_path="$(adb_phone shell pm path io.github.yoyote84.flipdexos 2>/dev/null | tr -d '\r' || true)"
   [[ "$package_path" == package:* ]] || die "l'application Android FlipdexOS (io.github.yoyote84.flipdexos) ne semble pas installée."
 
-  info "Téléphone : \${model:-modèle non identifié} · Android \${ANDROID_RELEASE:-inconnu} (API $ANDROID_SDK) · One UI $ONE_UI_NAME"
+  info "Téléphone : ${model:-modèle non identifié} · Android ${ANDROID_RELEASE:-inconnu} (API $ANDROID_SDK) · One UI $ONE_UI_NAME"
   save_settings_snapshot
   info "Activation des réglages nécessaires au mode bureau…"
   apply_desktop_settings
