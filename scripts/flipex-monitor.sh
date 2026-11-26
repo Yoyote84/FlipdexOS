@@ -133,8 +133,9 @@ check_tools() {
   require_scrcpy_option "--no-downsize-on-error"
   info "Architecture : $(uname -m)"
   if [[ -r /etc/os-release ]]; then
-    . /etc/os-release
-    info "Distribution : ${PRETTY_NAME:-Linux}"
+    local distro_name
+    distro_name="$(sed -n 's/^PRETTY_NAME=//p' /etc/os-release | head -n 1 | tr -d '"')"
+    info "Distribution : ${distro_name:-Linux}"
   fi
   info "Session graphique : ${XDG_SESSION_TYPE:-inconnue} · ${XDG_CURRENT_DESKTOP:-bureau inconnu}"
   info "ADB : $("$ADB_BIN" version 2>&1 | head -n 1)"
