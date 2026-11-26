@@ -83,7 +83,7 @@ grep -Fq 'Android : 17 (API 37)' <<<"$OUTPUT"
 grep -Fq 'One UI : 9.0' <<<"$OUTPUT"
 grep -Fq 'Application : installée (13.6.0)' <<<"$OUTPUT"
 grep -Fq 'Application : installée (0.3.4)' <<<"$OUTPUT"
-grep -Fq 'targetSdk de l’APK installé : 36' <<<"$OUTPUT"
+grep -Fq "targetSdk de l'APK installé : 36" <<<"$OUTPUT"
 grep -Fq 'Lecture seule' <<<"$OUTPUT"
 
 # The diagnostic must remain useful when optional packages are absent.
