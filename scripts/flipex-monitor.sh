@@ -3,7 +3,7 @@
 # DeX virtual/overlay display with Chromebook mouse + keyboard input.
 set -Eeuo pipefail
 
-VERSION="0.9.0"
+VERSION="0.10.0"
 ADB_BIN="${ADB:-adb}"
 if [[ -n "${SCRCPY:-}" ]]; then
   SCRCPY_BIN="$SCRCPY"
@@ -32,6 +32,11 @@ HOST_RESOLUTION=""
 FLIPEX_TARGET_SDK=""
 MAX_SOURCE_SHORT_SIDE=1080
 HOST_FALLBACK_RESOLUTION="1728x1080"
+FLEX_DISPLAY=0
+ANDROID_RELEASE=""
+ONE_UI_CODE=""
+ONE_UI_NAME="non détectée"
+SHIZUKU_VERSION=""
 
 gui_notify() {
   local urgency="${1:-normal}" title="${2:-FlipEx Monitor}" message="${3:-}"
@@ -74,6 +79,7 @@ Connexion et affichage:
   --keyboard uhid|sdk           uhid = vrai clavier physique (AZERTY à configurer sur Android)
   --fps N                       Images/s, 1 à 60 (défaut: 30)
   --bit-rate RATE               Débit vidéo, ex. 12M, 16M ou 20M (défaut: 20M)
+  --flex-display                Adapter dynamiquement la résolution à la fenêtre (opt-in)
 
 Exemples:
   flipex-monitor
@@ -449,7 +455,10 @@ start_monitor() {
 
   if [[ "$selected_display" == "virtual" ]]; then
     args+=(--new-display="$DISPLAY_SPEC")
-    if has_scrcpy_option "--flex-display"; then args+=(--flex-display); fi
+    if [[ "$FLEX_DISPLAY" == "1" ]]; then
+      require_scrcpy_option "--flex-display"
+      args+=(--flex-display)
+    fi
     if has_scrcpy_option "--no-vd-destroy-content"; then args+=(--no-vd-destroy-content); fi
   fi
 
@@ -469,7 +478,7 @@ start_monitor() {
   if has_scrcpy_option "--video-codec"; then args+=(--video-codec=h264); fi
   if has_scrcpy_option "--video-buffer"; then args+=(--video-buffer=0); fi
   if has_scrcpy_option "--no-downsize-on-error"; then args+=(--no-downsize-on-error); fi
-  if has_scrcpy_option "--display-ime-policy"; then args+=(--display-ime-policy=hide); fi
+  if has_scrcpy_option "--display-ime-policy"; then args+=(--display-ime-policy=local); fi
   if has_scrcpy_option "--keep-active"; then args+=(--keep-active); fi
   if has_scrcpy_option "--stay-awake" && [[ "$SERIAL" != *:* && "$SERIAL" != *"_adb-tls-"* ]]; then args+=(--stay-awake); fi
   if has_scrcpy_option "--disable-screensaver"; then args+=(--disable-screensaver); fi
@@ -503,6 +512,7 @@ while (($#)); do
     --keyboard) (($# >= 2)) || die "--keyboard nécessite une valeur."; KEYBOARD_MODE="$2"; shift 2 ;;
     --fps) (($# >= 2)) || die "--fps nécessite une valeur."; FPS="$2"; shift 2 ;;
     --bit-rate) (($# >= 2)) || die "--bit-rate nécessite une valeur."; BIT_RATE="$2"; shift 2 ;;
+    --flex-display) FLEX_DISPLAY=1; shift ;;
     -h|--help) usage; exit 0 ;;
     --) shift; break ;;
     *) die "option inconnue : $1 (voir --help)." ;;
