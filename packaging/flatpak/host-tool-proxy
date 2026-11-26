@@ -18,6 +18,7 @@ command -v flatpak-spawn >/dev/null 2>&1 || {
 
 # GUI tools run on the host, outside the sandbox. Forward only the session
 # variables needed to reconnect scrcpy/KScreen to this user's Plasma session.
+# shellcheck disable=SC2016
 exec flatpak-spawn --host /bin/sh -c '
   set -eu
   export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
