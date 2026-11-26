@@ -35,6 +35,7 @@ jobs:
           bash -n tests/flipex-android-preflight.sh
           bash -n tests/flatpak-packaging.sh
           bash -n tests/android-logic-tests.sh
+          bash -n tests/android-release-readiness.sh
           sh -n packaging/flatpak/launch.sh
           sh -n packaging/flatpak/host-tool-proxy
 
@@ -51,6 +52,7 @@ jobs:
           shellcheck tests/flipex-android-preflight.sh
           shellcheck tests/flatpak-packaging.sh
           shellcheck tests/android-logic-tests.sh
+          shellcheck tests/android-release-readiness.sh
 
       - name: Tester les profils Plasma/KScreen
         run: bash tests/fake-tools.sh
@@ -63,6 +65,9 @@ jobs:
 
       - name: Tester les règles Android sans dépendance Maven
         run: bash tests/android-logic-tests.sh
+
+      - name: Vérifier la préparation de signature release
+        run: bash tests/android-release-readiness.sh
 
       - name: Vérifier la compatibilité Alpine/postmarketOS
         run: |
@@ -78,11 +83,13 @@ jobs:
             bash -n tests/fake-tools.sh
             bash -n tests/flipex-android-preflight.sh
             bash -n tests/flatpak-packaging.sh
+            bash -n tests/android-release-readiness.sh
             sh -n packaging/flatpak/launch.sh
             sh -n packaging/flatpak/host-tool-proxy
             bash tests/fake-tools.sh
             bash tests/flipex-android-preflight.sh
             bash tests/flatpak-packaging.sh
+            bash tests/android-release-readiness.sh
           '
 
       - name: Vérifier l'aide et les options
