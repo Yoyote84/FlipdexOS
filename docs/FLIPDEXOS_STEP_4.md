@@ -48,8 +48,9 @@ La sortie attendue est `dist/flipdexos-monitor-0.10.0-aarch64.flatpak` et son fi
 - Vérification statique du manifeste, du runtime et des permissions.
 - Test simulé de la transmission des arguments à ADB par `flatpak-spawn`.
 - Vérification qu'un nom d'exécutable qui n'est pas dans la liste blanche est refusé.
-- Construction réelle du bundle sur un runner GitHub Actions ARM64 natif (`ubuntu-24.04-arm`).
-- Publication du bundle et de son SHA-256 comme artefacts de la compilation CI.
+- Construction réelle du bundle par l'action officielle Flatpak GitHub sur un runner ARM64 natif (`ubuntu-24.04-arm`).
+- Vérification de la présence du bundle et calcul de son SHA-256 dans le workflow.
+- Publication du bundle et de sa somme comme artefact téléchargeable de la compilation CI.
 
 La construction CI ne remplace pas le test USB/Plasma sur le Lenovo Duet réel.
 
