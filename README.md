@@ -1,6 +1,6 @@
 # FlipdexOS — FlipEx Monitor
 
-Client Linux ARM64 pour ouvrir le bureau virtuel de **FlipEx** dans une fenêtre du Chromebook et le piloter avec le pavé tactile et le clavier du Chromebook.
+Client Linux ARM64 conçu en priorité pour le **Lenovo Chromebook Duet MediaTek Helio P60T sous postmarketOS + Plasma Desktop**. Il ouvre le bureau virtuel de **FlipEx** dans une fenêtre et le pilote avec le pavé tactile et le clavier du Chromebook. Debian/Ubuntu restent des cibles secondaires.
 
 > **État : version interactive en cours de validation matérielle.** Le lanceur, l'entrée souris/clavier, l'installation dans le menu et les tests simulés sont présents. Le fonctionnement exact avec le Lenovo Duet et le Samsung Z Flip 6 doit encore être confirmé sur les appareils réels. Aucun paquet ARM64 précompilé n'est publié.
 
@@ -78,6 +78,12 @@ flipex-monitor --display 1920x1080/160
 
 Pour une vraie sortie DeX 1440p ou 4K, il faudra d'abord modifier FlipEx pour que son écran virtuel interne soit rendu au-delà de sa limite actuelle de 1080 pixels. Augmenter uniquement la capture scrcpy ne peut pas recréer les détails que l'application Android n'a pas dessinés.
 
+## Environnement pris en charge
+
+Cible principale : Lenovo Chromebook Duet, SoC MediaTek Helio P60T, architecture `aarch64`, postmarketOS (base Alpine Linux) et Plasma Desktop. La détection de résolution privilégie `kscreen-doctor`, le gestionnaire d'écrans KDE, puis essaie `wlr-randr` et `xrandr`. Le profil automatique ne dépend donc pas d'X11 pour fonctionner dans une session Plasma Wayland.
+
+Le script de compilation scrcpy utilise `apk` sur postmarketOS/Alpine, avec `doas` ou `sudo` selon l'outil disponible. Il garde `apt-get` uniquement pour les systèmes Debian/Ubuntu.
+
 ## Prérequis
 
 Sur le Z Flip 6 :
@@ -86,30 +92,33 @@ Sur le Z Flip 6 :
 2. Activer les options développeur et le débogage USB.
 3. Déverrouiller le téléphone et autoriser l'ordinateur ADB.
 
-Sur le Chromebook Linux (Debian/Ubuntu ARM64) :
+Sur le Chromebook sous postmarketOS + Plasma :
 
 ```bash
-sudo apt update
-sudo apt install adb bash git sudo
 bash scripts/install-scrcpy-latest.sh
+bash scripts/install-system.sh --user
 ```
 
-Le script compile pour l'architecture Linux locale et installe la version officielle scrcpy 5.0.1 avec ses dépendances. C'est la voie recommandée sur ARM64 : le binaire statique officiel publié pour Linux est x86_64, tandis que le guide Linux officiel recommande une compilation locale pour les autres architectures. Le lanceur exige au minimum scrcpy 3.3.4 et recommande 5.0.1. `libnotify-bin` ou `kdialog` est facultatif pour les notifications de bureau.
+Le premier script utilise `apk` pour installer les dépendances Alpine, récupère le serveur officiel scrcpy 5.0.1, vérifie sa somme SHA-256, compile le client sur l'architecture locale ARM64 et l'installe dans `/usr/local/bin`. Il sait aussi utiliser `apt-get` sur Debian/Ubuntu, mais ce n'est pas la procédure de référence du Lenovo Duet.
 
-Le Chromebook doit disposer d'une session graphique Linux (Wayland ou X11). Le câble USB-C transporte ici ADB et le flux vidéo compressé ; il ne transforme pas le Chromebook en moniteur HDMI natif.
+Le second script installe le lanceur dans `~/.local/bin` et le raccourci dans `~/.local/share/applications`, sans demander les droits root. Plasma utilise un chemin absolu vers le lanceur. Une installation système reste possible avec `bash scripts/install-system.sh --system` et `doas` ou `sudo`.
+
+La compilation scrcpy 5.0.1 exige SDL 3.2 ou plus récent, FFmpeg 6 ou plus récent et libusb. Sur une base postmarketOS trop ancienne pour fournir `sdl3-dev`, le script s'arrête sans mélanger des dépôts Alpine edge à la distribution : il faut d'abord mettre à jour postmarketOS vers une base disposant de SDL3. N'ajoute pas un dépôt edge manuellement à une base stable.
+
+Le Chromebook doit disposer d'une session graphique Plasma (Wayland ou X11). Le câble USB-C transporte ici ADB et le flux vidéo compressé ; il ne transforme pas le Chromebook en moniteur HDMI natif.
 
 ## Installation
 
 Depuis la racine du dépôt :
 
 ```bash
-chmod +x scripts/flipex-monitor.sh scripts/install-system.sh
-./scripts/flipex-monitor.sh --check
-./scripts/flipex-monitor.sh --list
-bash scripts/install-system.sh
+chmod +x scripts/*.sh
+bash scripts/flipex-monitor.sh --check
+bash scripts/flipex-monitor.sh --list
+bash scripts/install-system.sh --user
 ```
 
-Le script d'installation place `flipex-monitor` dans `/usr/local/bin` et l'entrée de menu dans `/usr/share/applications`. Il utilise `sudo` si nécessaire. Ouvre ensuite **FlipEx Monitor — Connexion** dans le menu.
+Ouvre ensuite **FlipEx Monitor — Connexion** dans le menu Plasma. Pour lancer depuis le terminal, utilise `$HOME/.local/bin/flipex-monitor` ou ajoute `$HOME/.local/bin` à ton `PATH`.
 
 ## Options pratiques
 
@@ -133,7 +142,7 @@ La commande de restauration remet à zéro les trois réglages du mode bureau g�
 
 ## Android 17 / One UI 9
 
-Le client Linux prend en charge Android API 37 avec un scrcpy récent. Il détecte aussi le `targetSdk` de l'APK FlipEx. Si l'APK cible encore API 36, il l'indique clairement : l'avertissement de compatibilité Android appartient à l'application FlipEx et doit être corrigé dans son dépôt Android (mise à jour du manifeste, compilation SDK et validation des fenêtres multi-écrans). FlipdexOS ne modifie pas l'APK installée sur le téléphone.
+Le client Linux prend en charge Android API 37 avec scrcpy 5.0.1 ou ultérieur. Il détecte aussi le `targetSdk` de l'APK FlipEx. Si l'APK cible encore API 36, il l'indique clairement : l'avertissement de compatibilité Android appartient à l'application FlipEx et doit être corrigé dans son dépôt Android (mise à jour du manifeste, compilation SDK et validation des fenêtres multi-écrans). FlipdexOS ne modifie pas l'APK installée sur le téléphone.
 
 ## Tests et développement
 
@@ -146,7 +155,7 @@ bash -n scripts/install-scrcpy-latest.sh
 bash tests/fake-tools.sh
 ```
 
-Le test simulé vérifie les profils automatiques 16:9, 16:10 et 4K, le mode écran virtuel + souris SDK, le mode souris HID et la restauration de l'overlay. Il ne remplace pas un essai sur le Z Flip 6 réel.
+Le test simulé vérifie KScreen/Plasma, les profils automatiques 16:9, 16:10 et 4K, le mode écran virtuel + souris SDK, le mode souris HID et la restauration de l'overlay. GitHub Actions exécute aussi les tests dans Alpine 3.24. Ces tests ne remplacent pas un essai sur le Lenovo Duet et le Z Flip 6 réels.
 
 ## Références techniques
 
