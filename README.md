@@ -142,10 +142,11 @@ Depuis la racine du dépôt :
 ```bash
 bash -n scripts/flipex-monitor.sh
 bash -n scripts/install-system.sh
+bash -n scripts/install-scrcpy-latest.sh
 bash tests/fake-tools.sh
 ```
 
-Le test simulé vérifie le mode écran virtuel + souris SDK par défaut, le mode souris HID optionnel et la restauration de l'overlay. Il ne remplace pas un essai sur le Z Flip 6 réel.
+Le test simulé vérifie les profils automatiques 16:9, 16:10 et 4K, le mode écran virtuel + souris SDK, le mode souris HID et la restauration de l'overlay. Il ne remplace pas un essai sur le Z Flip 6 réel.
 
 ## Références techniques
 
