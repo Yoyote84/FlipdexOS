@@ -58,8 +58,8 @@ if [[ "$MODE" == "user" ]]; then
   printf 'Raccourci Plasma : %s/flipex-monitor.desktop\n' "$APP_DIR"
   printf 'Commande : %s/flipex-monitor\n' "$BIN_DIR"
   if [[ ":${PATH}:" != *":$BIN_DIR:"* ]]; then
-    printf 'Note : %s n’est pas dans PATH du terminal. Le raccourci Plasma utilise le chemin absolu.\n' "$BIN_DIR"
-    printf 'Pour le terminal : export PATH="$HOME/.local/bin:$PATH"\n'
+    printf 'Note : %s n'est pas dans PATH du terminal. Le raccourci Plasma utilise le chemin absolu.\n' "$BIN_DIR"
+    printf "Pour le terminal : export PATH=\"\\$HOME/.local/bin:\\$PATH\"\n"
   fi
 else
   if [[ "$EUID" -ne 0 ]]; then
