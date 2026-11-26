@@ -1,0 +1,96 @@
+name: Signer l'APK de publication FlipdexOS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Construire l'APK release signée
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Vérifier et installer la clé privée
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FLIPDEX_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.FLIPDEX_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FLIPDEX_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FLIPDEX_KEY_PASSWORD }}
+        run: |
+          set -Eeuo pipefail
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "Secret GitHub manquant : $name. Consulte app/RELEASE_SIGNING.md." >&2
+              exit 1
+            fi
+          done
+          key_path="$RUNNER_TEMP/flipdexos-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$key_path"
+          chmod 600 "$key_path"
+          test -s "$key_path"
+          {
+            echo "FLIPDEX_KEYSTORE_PATH=$key_path"
+            echo "FLIPDEX_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "FLIPDEX_KEY_ALIAS=$KEY_ALIAS"
+            echo "FLIPDEX_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Installer JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Installer Android SDK 37
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - name: Installer la plateforme et Build Tools 37
+        shell: bash
+        run: |
+          sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
+          if [[ ! -e "$ANDROID_HOME/platforms/android-37" ]]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+
+      - name: Tester les règles logiques Android
+        run: bash tests/android-logic-tests.sh
+
+      - name: Compiler l'APK release signée
+        run: gradle --no-daemon :app:assembleRelease
+
+      - name: Vérifier signature et alignement
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          apk="app/build/outputs/apk/release/app-release.apk"
+          test -s "$apk"
+          "$ANDROID_HOME/build-tools/37.0.0/zipalign" -c -v 4 "$apk"
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose --print-certs "$apk"
+
+      - name: Calculer SHA-256
+        run: |
+          cd app/build/outputs/apk/release
+          sha256sum app-release.apk > app-release.apk.sha256
+          sha256sum --check app-release.apk.sha256
+
+      - name: Publier l'APK release privée
+        uses: actions/upload-artifact@v7
+        with:
+          name: flipdexos-android-release-signed
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/release/app-release.apk.sha256
+          if-no-files-found: error
+          retention-days: 90
