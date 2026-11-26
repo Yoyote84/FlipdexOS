@@ -21,11 +21,13 @@ install_dependencies() {
   if command -v apk >/dev/null 2>&1; then
     info "Système Alpine/postmarketOS détecté : installation avec apk."
     root_run apk update
-    root_run apk add --no-cache \
+    if ! root_run apk add --no-cache \
       android-tools ca-certificates coreutils git wget \
       build-base pkgconf meson samurai \
       sdl3 sdl3-dev ffmpeg ffmpeg-dev \
-      libusb libusb-dev libdrm-dev v4l-utils-dev
+      libusb libusb-dev libdrm-dev v4l-utils-dev; then
+      die "les paquets de compilation Alpine sont indisponibles. Vérifie que les dépôts main et community correspondent à ta version postmarketOS. Ne mélange pas les dépôts edge et stable."
+    fi
   elif command -v apt-get >/dev/null 2>&1; then
     info "Système Debian/Ubuntu détecté : installation avec apt."
     root_run apt-get update
