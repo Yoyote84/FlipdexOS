@@ -41,12 +41,14 @@ public final class MainActivity extends Activity {
     private Shizuku.UserServiceArgs userServiceArgs;
 
     private final Shizuku.OnBinderReceivedListener binderReceivedListener =
-            this::refreshShizukuStatus;
-    private final Shizuku.OnBinderDeadListener binderDeadListener = () -> {
-        shellService = null;
-        serviceBinding = false;
-        refreshShizukuStatus();
-    };
+            this::postRefreshShizukuStatus;
+    private final Shizuku.OnBinderDeadListener binderDeadListener = () ->
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                shellService = null;
+                serviceBinding = false;
+                refreshShizukuStatus();
+            });
     private final Shizuku.OnRequestPermissionResultListener permissionResultListener =
             (requestCode, grantResult) -> {
                 if (requestCode != SHIZUKU_PERMISSION_REQUEST) return;
@@ -196,7 +198,18 @@ public final class MainActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    private void postRefreshShizukuStatus() {
+        mainHandler.post(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                refreshShizukuStatus();
+            }
+        });
+    }
+
     private void refreshShizukuStatus() {
+        if (shizukuStatus == null || connectButton == null || isDestroyed()) {
+            return;
+        }
         boolean binderAlive = Shizuku.pingBinder();
         if (!binderAlive) {
             shizukuStatus.setText("Serveur indisponible · démarre Shizuku puis vérifie de nouveau.");
