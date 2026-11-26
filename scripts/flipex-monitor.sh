@@ -3,7 +3,7 @@
 # DeX virtual/overlay display with Chromebook mouse + keyboard input.
 set -Eeuo pipefail
 
-VERSION="0.8.0"
+VERSION="0.9.0"
 ADB_BIN="${ADB:-adb}"
 if [[ -n "${SCRCPY:-}" ]]; then
   SCRCPY_BIN="$SCRCPY"
@@ -104,7 +104,7 @@ require_scrcpy_option() {
 
 version_at_least() {
   awk -v actual="$1" -v minimum="$2" 'BEGIN {
-    split(actual, a, "."); split(minimum, b, ".");
+    split(actual, a, /[.]/); split(minimum, b, /[.]/);
     for (i = 1; i <= 3; i++) {
       av = a[i] + 0; bv = b[i] + 0;
       if (av > bv) exit 0;
