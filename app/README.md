@@ -13,7 +13,7 @@ Prérequis :
 Commandes depuis la racine du dépôt :
 
 ```bash
-gradle :app:testDebugUnitTest
+bash tests/android-logic-tests.sh
 gradle :app:assembleDebug
 ```
 
