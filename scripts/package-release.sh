@@ -2,7 +2,7 @@
 # Build a reproducible, architecture-independent FlipdexOS Monitor source bundle.
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "\${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_DIR="$ROOT/dist"
 
 die() { printf 'Erreur : %s\n' "$*" >&2; exit 1; }
@@ -15,7 +15,8 @@ Construire l'archive portable de FlipdexOS Monitor.
 Usage:
   bash scripts/package-release.sh [--output DIRECTORY]
 
-L'archive contient les scripts Linux, le lanceur Plasma et la documentation.
+L'archive contient les scripts Linux, le manifeste Flatpak, le lanceur Plasma,
+les tests de packaging et la documentation.
 Elle ne contient pas de binaire scrcpy ni d'APK Android : scrcpy est compilé
 sur le Chromebook cible pour son architecture ARM64.
 EOF
@@ -38,7 +39,7 @@ while (($#)); do
   esac
 done
 
-for cmd in awk cp find git grep mktemp sha256sum sort tar; do
+for cmd in awk basename cp date dirname find git grep head mkdir mktemp sed sha256sum sort tar xargs; do
   command -v "$cmd" >/dev/null 2>&1 || die "outil requis introuvable : $cmd."
 done
 
@@ -46,35 +47,34 @@ tar --version 2>/dev/null | grep -q 'GNU tar' \
   || die "GNU tar est requis pour produire une archive déterministe."
 
 VERSION="$(sed -n 's/^VERSION="\([^"]*\)".*/\1/p' "$ROOT/scripts/flipex-monitor.sh" | head -n 1)"
-[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "version FlipEx Monitor invalide : \${VERSION:-absente}."
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "version FlipEx Monitor invalide : ${VERSION:-absente}."
 
-if [[ -n "\${SOURCE_DATE_EPOCH:-}" ]]; then
+if [[ -n "${SOURCE_DATE_EPOCH:-}" ]]; then
   BUILD_EPOCH="$SOURCE_DATE_EPOCH"
-elif command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
-  BUILD_EPOCH="$(git -C "$ROOT" log -1 --format=%ct)"
 else
-  BUILD_EPOCH="$(date +%s)"
+  BUILD_EPOCH="$(git -C "$ROOT" log -1 --format=%ct)"
 fi
 [[ "$BUILD_EPOCH" =~ ^[0-9]+$ ]] || die "SOURCE_DATE_EPOCH doit être un nombre entier positif."
 
-SOURCE_COMMIT="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'unknown')"
-PACKAGE_NAME="flipdexos-monitor-\${VERSION}-linux-portable"
+SOURCE_COMMIT="$(git -C "$ROOT" rev-parse HEAD)"
+PACKAGE_NAME="flipdexos-monitor-${VERSION}-linux-portable"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
 STAGE="$TMP_DIR/$PACKAGE_NAME"
-mkdir -p "$STAGE/scripts" "$STAGE/packaging/flatpak" "$STAGE/docs"
+mkdir -p "$STAGE/scripts" "$STAGE/packaging/flatpak" "$STAGE/tests" "$STAGE/docs"
 
 for file in \
   README.md \
+  io.github.yoyote84.flipdexos.yml \
   scripts/flipex-monitor.sh \
   scripts/install-system.sh \
   scripts/install-scrcpy-latest.sh \
   scripts/diagnose-flipex-android.sh \
   scripts/build-flatpak.sh \
+  scripts/package-release.sh \
   tests/flatpak-packaging.sh \
-  io.github.yoyote84.flipdexos.yml \
   packaging/flipex-monitor.desktop \
   packaging/flatpak/launch.sh \
   packaging/flatpak/host-tool-proxy \
