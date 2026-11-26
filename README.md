@@ -67,13 +67,14 @@ Exemples :
 - Écran 1920 × 1080 (16:9) : **1920 × 1080**.
 - Écran 3840 × 2160 (4K) : **1920 × 1080**, sans agrandissement artificiel.
 
-Le profil reprend aussi la densité DeX Samsung lorsqu'elle est disponible, utilise H.264, 20 Mbit/s, 30 FPS et un tampon vidéo minimal. Lorsque scrcpy le permet, il désactive la réduction automatique de résolution après une erreur d'encodeur pour éviter une baisse silencieuse de définition.
+Le profil reprend aussi la densité DeX Samsung lorsqu'elle est disponible, utilise H.264, 20 Mbit/s, 30 FPS et un tampon vidéo minimal. Lorsque scrcpy le permet, il désactive la réduction automatique de résolution après une erreur d'encodeur pour éviter une baisse silencieuse de définition. La résolution Android reste **fixe pendant le redimensionnement de la fenêtre**, afin d'éviter que la surface DeX baisse automatiquement de définition. L'option `--flex-display` est disponible en opt-in pour adapter dynamiquement la surface à la taille de la fenêtre, au prix d'une définition qui peut baisser quand la fenêtre est réduite.
 
 Pour forcer manuellement la résolution :
 
 ```bash
 flipex-monitor --display 1728x1080/160
 flipex-monitor --display 1920x1080/160
+flipex-monitor --flex-display
 ```
 
 Pour une vraie sortie DeX 1440p ou 4K, il faudra d'abord modifier FlipEx pour que son écran virtuel interne soit rendu au-delà de sa limite actuelle de 1080 pixels. Augmenter uniquement la capture scrcpy ne peut pas recréer les détails que l'application Android n'a pas dessinés.
@@ -89,8 +90,9 @@ Le script de compilation scrcpy utilise `apk` sur postmarketOS/Alpine, avec `doa
 Sur le Z Flip 6 :
 
 1. Installer et configurer l'application Android [FlipEx](https://github.com/Vedjamkar/flipex).
-2. Activer les options développeur et le débogage USB.
-3. Déverrouiller le téléphone et autoriser l'ordinateur ADB.
+2. Installer Shizuku depuis une source officielle, démarrer son serveur via ADB et vérifier que FlipEx est autorisé dans Shizuku.
+3. Activer les options développeur et le débogage USB.
+4. Déverrouiller le téléphone et autoriser l'ordinateur ADB.
 
 Sur le Chromebook sous postmarketOS + Plasma :
 
@@ -138,7 +140,7 @@ Si plusieurs appareils ADB sont connectés :
 flipex-monitor --serial NUMERO_ADB
 ```
 
-La commande de restauration remet à zéro les trois réglages du mode bureau gérés par le lanceur et supprime le réglage overlay. Elle ne désinstalle pas FlipEx. Pour restaurer aussi les réglages propres à FlipEx, utiliser **Restore stock settings** dans l'application Android.
+Chaque session sauvegarde les valeurs initiales des trois réglages globaux du mode bureau (et, en mode overlay, l'ancien paramètre overlay) dans `$HOME/.local/state/flipdex-monitor/` avec des permissions privées. À la fermeture normale de scrcpy, FlipdexOS restaure automatiquement ces valeurs. Si le Chromebook ou le processus est interrompu brutalement, exécute `flipex-monitor --restore` : la commande restaure les valeurs réellement sauvegardées, sans forcer arbitrairement les réglages à `0`. Elle ne désinstalle pas FlipEx. Pour restaurer les réglages propres à FlipEx, utiliser **Restore stock settings** dans l'application Android.
 
 ## Android 17 / One UI 9
 
@@ -158,7 +160,7 @@ Pour conserver le résultat :
 bash scripts/diagnose-flipex-android.sh --output ~/flipex-android-report.txt
 ```
 
-Ce diagnostic est en lecture seule. Il détecte Android/API, One UI, la présence de Shizuku et de FlipEx et le target SDK de l'APK installé. Il ne peut pas confirmer le Binder Shizuku de l'application : il faut aussi vérifier que Shizuku affiche « en cours d'exécution » et que FlipEx est autorisé. Voir le [rapport de compatibilité de l'étape 2/5](docs/FLIPEX_ANDROID_COMPATIBILITY_STEP_2.md).
+Ce diagnostic est en lecture seule. Il détecte Android/API, One UI, la présence de Shizuku et de FlipEx, le target SDK de l'APK installé et la présence éventuelle du processus serveur Shizuku dans `ps -A`. La présence du processus ne garantit pas le Binder : il faut aussi vérifier que Shizuku affiche « en cours d'exécution » et que FlipEx est autorisé. Le lanceur refait ce précontrôle avant de modifier les réglages Android. Voir le [rapport de compatibilité de l'étape 2/5](docs/FLIPEX_ANDROID_COMPATIBILITY_STEP_2.md).
 
 ## Tests et développement
 
@@ -169,9 +171,10 @@ bash -n scripts/flipex-monitor.sh
 bash -n scripts/install-system.sh
 bash -n scripts/install-scrcpy-latest.sh
 bash tests/fake-tools.sh
+bash tests/flipex-android-preflight.sh
 ```
 
-Le test simulé vérifie KScreen/Plasma, les profils automatiques 16:9, 16:10 et 4K, le mode écran virtuel + souris SDK, le mode souris HID et la restauration de l'overlay. GitHub Actions exécute aussi les tests dans Alpine 3.24. Ces tests ne remplacent pas un essai sur le Lenovo Duet et le Z Flip 6 réels.
+Les tests simulés vérifient KScreen/Plasma, les profils 16:9/16:10/4K, la résolution fixe et son option adaptative, les modes de souris et clavier, la détection préalable de Shizuku, la sauvegarde/restauration des réglages Android et la récupération du paramètre overlay. GitHub Actions exécute aussi les tests dans Alpine 3.24. Ces tests ne remplacent pas un essai sur le Lenovo Duet et le Z Flip 6 réels.
 
 ## Références techniques
 
