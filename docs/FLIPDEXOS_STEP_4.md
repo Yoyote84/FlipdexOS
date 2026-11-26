@@ -66,11 +66,11 @@ Le premier test matériel doit commencer par l'autorisation Shizuku, puis le dia
 
 **Socle de code Android :** créé dans FlipdexOS, code original MIT, build CI ajouté.
 
-**APK debug :** disponible comme artefact après réussite du workflow Android ; elle ne constitue pas encore une release signée de production.
+**APK debug :** compilée et publiée avec succès par le workflow #43 ; SHA-256 vérifiée. Elle ne constitue pas encore une release signée de production.
 
 **Flatpak :** manifeste et pipeline ARM64 présents ; installation réelle et validation sur le Chromebook en attente.
 
-**Étape 4 :** reste à confirmer par les builds CI et les tests matériels. L'étape 5 sera dédiée à la validation et aux corrections observées sur le Z Flip6 et le Chromebook.
+**Étape 4 :** la compilation Android et les contrôles source sont confirmés verts. Le workflow Flatpak ARM64 reste à terminer et le paquet doit être testé sur le Chromebook. L'étape 5 sera dédiée à la validation réelle et aux corrections observées sur le Z Flip6 et le Chromebook.
 
 ## Sources
 
