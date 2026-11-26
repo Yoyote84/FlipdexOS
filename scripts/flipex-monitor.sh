@@ -22,6 +22,8 @@ OVERLAY_ACTIVE=0
 SCRCPY_HELP=""
 SCRCPY_VERSION=""
 HOST_RESOLUTION_SOURCE=""
+HOST_RESOLUTION=""
+FLIPEX_TARGET_SDK=""
 MAX_SOURCE_SHORT_SIDE=1080
 HOST_FALLBACK_RESOLUTION="1728x1080"
 
@@ -189,7 +191,7 @@ detect_host_resolution() {
     ' <<<"$output")"
     if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
       HOST_RESOLUTION_SOURCE="xrandr"
-      printf '%s\n' "$geometry"
+      HOST_RESOLUTION="$geometry"
       return 0
     fi
   fi
@@ -204,7 +206,7 @@ detect_host_resolution() {
     ' <<<"$output")"
     if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
       HOST_RESOLUTION_SOURCE="wlr-randr"
-      printf '%s\n' "$geometry"
+      HOST_RESOLUTION="$geometry"
       return 0
     fi
   fi
@@ -221,12 +223,12 @@ detect_host_resolution() {
     ' <<<"$output")"
     if [[ "$geometry" =~ ^[0-9]{3,5}x[0-9]{3,5}$ ]]; then
       HOST_RESOLUTION_SOURCE="kscreen-doctor"
-      printf '%s\n' "$geometry"
+      HOST_RESOLUTION="$geometry"
       return 0
     fi
   fi
 
-  printf '%s\n' "$HOST_FALLBACK_RESOLUTION"
+  HOST_RESOLUTION="$HOST_FALLBACK_RESOLUTION"
 }
 
 match_flipex_render_size() {
@@ -263,7 +265,8 @@ detect_android_dpi() {
 resolve_display_profile() {
   [[ "$DISPLAY_SPEC" == "auto" ]] || return 0
   local host_resolution width height render_resolution dpi
-  host_resolution="$(detect_host_resolution)"
+  detect_host_resolution
+  host_resolution="$HOST_RESOLUTION"
   IFS=x read -r width height <<<"$host_resolution"
   [[ "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]] || die "impossible de détecter la résolution de l’écran hôte."
   render_resolution="$(match_flipex_render_size "$width" "$height")"
