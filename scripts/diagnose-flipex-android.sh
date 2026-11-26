@@ -69,7 +69,7 @@ format_oneui() {
 report() {
   local brand model release sdk oneui_code oneui adb_usb adb_wifi
   local shizuku_path shizuku_dump shizuku_version flipex_path flipex_dump
-  local flipex_version flipex_target services host_os
+  local flipex_version flipex_target shizuku_process host_os
   brand="$(read_prop ro.product.brand)"
   model="$(read_prop ro.product.model)"
   release="$(read_prop ro.build.version.release)"
@@ -85,7 +85,7 @@ report() {
   flipex_dump="$(package_dump dev.ved.flipdex)"
   flipex_version="$(package_field "$flipex_dump" versionName)"
   flipex_target="$(package_field "$flipex_dump" targetSdk)"
-  services="$(adb_shell service list)"
+  shizuku_process="$(adb_shell ps -A | grep -E "shizuku_server|libshizuku[.]so" || true)"
   host_os="Linux $(uname -m)"
   if [[ -r /etc/os-release ]]; then
     host_os="$(sed -n 's/^PRETTY_NAME=//p' /etc/os-release | head -n 1 | tr -d '"') · $(uname -m)"
@@ -112,10 +112,12 @@ report() {
   if [[ -n "$shizuku_path" ]]; then
     printf 'Application : installée (%s)\n' "${shizuku_version:-version inconnue}"
   else printf '%s\n' "Application : absente"; fi
-  if grep -qiE 'shizuku|rikka' <<<"$services"; then
-    printf '%s\n' "Entrée Shizuku repérée dans la liste Binder (à confirmer dans l’application)."
-  else printf '%s\n' "Service Binder : état non vérifiable de façon fiable depuis ADB shell."; fi
-  printf '%s\n' "Confirmer dans Shizuku que le serveur est en cours d’exécution et que FlipEx est autorisé."
+  if [[ -n "$shizuku_process" ]]; then
+    printf '%s\n' "Processus serveur : détecté (cela ne valide pas le Binder)."
+  else
+    printf '%s\n' "Processus serveur : non détecté par ps -A."
+  fi
+  printf '%s\n' "Confirmer dans Shizuku que le serveur est actif et que FlipEx est autorisé."
 
   printf '\n%s\n' "[FlipEx]"
   if [[ -n "$flipex_path" ]]; then
