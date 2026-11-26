@@ -36,6 +36,7 @@ jobs:
           bash -n tests/flatpak-packaging.sh
           bash -n tests/android-logic-tests.sh
           bash -n tests/android-release-readiness.sh
+          bash -n tests/android-emulator-smoke.sh
           sh -n packaging/flatpak/launch.sh
           sh -n packaging/flatpak/host-tool-proxy
 
@@ -53,6 +54,7 @@ jobs:
           shellcheck tests/flatpak-packaging.sh
           shellcheck tests/android-logic-tests.sh
           shellcheck tests/android-release-readiness.sh
+          shellcheck tests/android-emulator-smoke.sh
 
       - name: Tester les profils Plasma/KScreen
         run: bash tests/fake-tools.sh
