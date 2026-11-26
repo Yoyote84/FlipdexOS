@@ -37,7 +37,6 @@ jobs:
       - name: Installer Android 17 Preview (API 37)
         shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null
           BUILD_TOOLS_PACKAGE="$(sdkmanager --list --channel=3 2>/dev/null \
             | grep -oE 'build-tools;37\.[0-9.]+(-[[:alnum:].-]+)?' \
             | sort -Vu \
