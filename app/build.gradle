@@ -4,6 +4,7 @@ plugins {
 android {
     namespace "io.github.yoyote84.flipdexos"
     compileSdk 37
+    buildToolsVersion "37.0.0"
     defaultConfig {
         applicationId "io.github.yoyote84.flipdexos"
         minSdk 31
