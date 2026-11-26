@@ -9,7 +9,7 @@ Le projet comporte deux applications distinctes :
 
 L'objectif est que l'écran principal du téléphone reste utilisable indépendamment pendant que le bureau est affiché sur le Chromebook.
 
-> **État : première version native en cours de compilation et de validation.** Le code Android indépendant est maintenant dans ce dépôt. Les builds CI doivent encore confirmer la compilation et l'APK doit être essayé sur le Z Flip6 réel. Le Flatpak doit lui aussi être validé sur le Chromebook matériel.
+> **État : première APK debug compilée.** Le module Android indépendant compile contre API 37 et ses tests sont verts. L'APK de test a été publiée par GitHub Actions et vérifiée par SHA-256. Le test sur le Z Flip6 réel et la validation du Flatpak sur le Chromebook restent à faire.
 
 ## Architecture
 
