@@ -423,7 +423,7 @@ save_settings_snapshot() {
     printf 'enable_non_resizable_multi_window=%s\n' "$non_resizable"
     if [[ "$DISPLAY_MODE" == "overlay" ]]; then
       overlay_value="$(read_global_setting overlay_display_devices)"
-      [[ "$overlay_value" == "null" || "$overlay_value" =~ ^[A-Za-z0-9._,:/+ -]{1,512}$ ]] || {
+      [[ "$overlay_value" == "null" || "$overlay_value" =~ ^[-A-Za-z0-9._,:/+]{1,512}$ ]] || {
         rm -f "$temp_file"
         die "valeur overlay_display_devices inattendue; aucun réglage n'a été changé."
       }
@@ -462,7 +462,7 @@ restore_saved_settings() {
   if [[ -n "$value" ]]; then
     if [[ "$value" == "null" ]]; then
       adb_phone shell settings delete global overlay_display_devices >/dev/null 2>&1 || failed=1
-    elif [[ "$value" =~ ^[A-Za-z0-9._,:/+ -]{1,512}$ ]]; then
+    elif [[ "$value" =~ ^[-A-Za-z0-9._,:/+]{1,512}$ ]]; then
       adb_phone shell settings put global overlay_display_devices "$value" >/dev/null 2>&1 || failed=1
     else
       warn "valeur overlay sauvegardée invalide; fichier conservé."
