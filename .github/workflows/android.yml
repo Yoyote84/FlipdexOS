@@ -43,8 +43,8 @@ jobs:
           if [[ ! -e "$ANDROID_HOME/platforms/android-37" ]]; then
             ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
           fi
-      - name: Tester les règles d'accès système
-        run: gradle --no-daemon :app:testDebugUnitTest
+      - name: Tester les règles d'accès système sans dépendance externe
+        run: bash tests/android-logic-tests.sh
 
       - name: Compiler l'APK debug
         run: gradle --no-daemon :app:assembleDebug
