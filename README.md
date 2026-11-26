@@ -144,6 +144,22 @@ La commande de restauration remet à zéro les trois réglages du mode bureau g�
 
 Le client Linux prend en charge Android API 37 avec scrcpy 5.0.1 ou ultérieur. Il détecte aussi le `targetSdk` de l'APK FlipEx. Si l'APK cible encore API 36, il l'indique clairement : l'avertissement de compatibilité Android appartient à l'application FlipEx et doit être corrigé dans son dépôt Android (mise à jour du manifeste, compilation SDK et validation des fenêtres multi-écrans). FlipdexOS ne modifie pas l'APK installée sur le téléphone.
 
+### Diagnostic Android / Shizuku / FlipEx
+
+Pour vérifier l'état réel du téléphone avant un test DeX, connecte le Z Flip 6 en USB, autorise ADB, puis exécute :
+
+```bash
+bash scripts/diagnose-flipex-android.sh
+```
+
+Pour conserver le résultat :
+
+```bash
+bash scripts/diagnose-flipex-android.sh --output ~/flipex-android-report.txt
+```
+
+Ce diagnostic est en lecture seule. Il détecte Android/API, One UI, la présence de Shizuku et de FlipEx et le target SDK de l'APK installé. Il ne peut pas confirmer le Binder Shizuku de l'application : il faut aussi vérifier que Shizuku affiche « en cours d'exécution » et que FlipEx est autorisé. Voir le [rapport de compatibilité de l'étape 2/5](docs/FLIPEX_ANDROID_COMPATIBILITY_STEP_2.md).
+
 ## Tests et développement
 
 Depuis la racine du dépôt :
