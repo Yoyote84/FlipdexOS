@@ -3,7 +3,9 @@ package io.github.yoyote84.flipdexos.shell;
 import android.os.RemoteException;
 import android.system.Os;
 import io.github.yoyote84.flipdexos.DesktopSettings;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
@@ -68,8 +70,15 @@ public final class ShellUserService extends IFlipdexShellService.Stub {
                 process.destroyForcibly();
                 throw new RemoteException("La commande Android a dépassé le délai autorisé.");
             }
-            byte[] output = process.getInputStream().readAllBytes();
-            return new CommandResult(process.exitValue(), new String(output, StandardCharsets.UTF_8));
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            try (InputStream input = process.getInputStream()) {
+                byte[] buffer = new byte[1024];
+                int count;
+                while ((count = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, count);
+                }
+            }
+            return new CommandResult(process.exitValue(), new String(output.toByteArray(), StandardCharsets.UTF_8));
         } catch (IOException exception) {
             throw new RemoteException("Impossible de lancer l'outil système Android : " + exception.getMessage());
         } catch (InterruptedException exception) {
