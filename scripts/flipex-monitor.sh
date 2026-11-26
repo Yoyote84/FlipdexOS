@@ -20,7 +20,7 @@ KEYBOARD_MODE="uhid"
 FPS="30"
 BIT_RATE="20M"
 ACTION="start"
-FLIPDEX_COMPONENT="io.github.yoyote84.flipdexos/.desktop.DesktopActivity"
+FLIPDEX_PACKAGE="io.github.yoyote84.flipdexos"
 ANDROID_SDK=""
 OVERLAY_ID=""
 OVERLAY_PREVIOUS=""
@@ -602,7 +602,7 @@ start_monitor() {
   fi
 
   require_scrcpy_option "--start-app"
-  args+=(--start-app="$FLIPDEX_COMPONENT")
+  args+=(--start-app="$FLIPDEX_PACKAGE")
   args+=("--mouse=$MOUSE_MODE" "--keyboard=$KEYBOARD_MODE")
   if has_scrcpy_option "--mouse-bind"; then
     if [[ "$MOUSE_MODE" == "sdk" ]]; then
