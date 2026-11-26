@@ -71,7 +71,7 @@ bash scripts/flipex-monitor.sh --list
 bash scripts/flipex-monitor.sh
 ```
 
-scrcpy demande un nouvel écran virtuel et démarre notre activité `io.github.yoyote84.flipdexos/.desktop.DesktopActivity` directement dessus. Le panneau compagnon ne s'ouvre pas sur l'écran principal.
+scrcpy demande un nouvel écran virtuel et démarre le paquet `io.github.yoyote84.flipdexos` dessus. Comme `--start-app` prend un nom de paquet, `MainActivity` détecte le lancement sur un écran secondaire et redirige vers `DesktopActivity`. Le panneau compagnon reste la page d'accueil de l'écran principal.
 
 Le profil de résolution est volontairement conservateur : petit côté de 1080 pixels, 30 FPS et H.264. Exemples de profils manuels :
 
