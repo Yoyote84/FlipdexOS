@@ -91,7 +91,7 @@ case "$1" in
         esac
         ;;
       wm) : ;;
-      am) printf 'Starting: Intent { cmp=io.github.yoyote84.flipdexos/.desktop.DesktopActivity }\nStatus: ok\nComplete\n' ;;
+      am) printf 'Unexpected manual activity start; scrcpy --start-app must be used\nStatus: ok\nComplete\n' ;;
       *) : ;;
     esac
     ;;
@@ -166,7 +166,7 @@ export ANDROID_SERIAL=FAKE123
 DEFAULT_OUTPUT="$(bash "$ROOT/scripts/flipex-monitor.sh")"
 printf '%s\n' "$DEFAULT_OUTPUT"
 grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
-grep -Fxq -- '--start-app=io.github.yoyote84.flipdexos/.desktop.DesktopActivity' "$FAKE_ARGS"
+grep -Fxq -- '--start-app=io.github.yoyote84.flipdexos' "$FAKE_ARGS"
 grep -Fq '1920x1200 (kscreen-doctor)' <<<"$DEFAULT_OUTPUT"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
