@@ -64,7 +64,7 @@ Usage: flipex-monitor [options]
 Actions:
   --check                       Vérifier ADB et scrcpy
   --list                        Lister les appareils ADB détectés
-  --restore                     Remettre à 0 les réglages Android utilisés
+  --restore                     Restaurer les valeurs Android sauvegardées
   --version                     Afficher la version
   -h, --help                    Afficher cette aide
 
@@ -93,7 +93,8 @@ la limite de rendu actuelle de FlipEx (ex. 1920x1200 devient 1728x1080).
 Avec --mouse uhid, Alt gauche libère/reprend le pointeur.
 En mode sdk (défaut), le pavé tactile reste libre sur le Chromebook.
 Le clavier du Chromebook est transmis au téléphone.
-Fermer scrcpy arrête le flux. L'overlay facultatif est restauré à la fermeture.
+La définition reste fixe par défaut; --flex-display active le redimensionnement dynamique.
+Fermer scrcpy restaure les réglages Android sauvegardés et l'overlay facultatif.
 EOF
 }
 
@@ -543,7 +544,7 @@ start_monitor() {
   apply_desktop_settings
 
   info "Démarrage de FlipEx sur le téléphone…"
-  launch_output="$(adb_phone shell am start -n "$FLIPEX_COMPONENT" 2>&1 | tr -d '\r' || true)"
+  launch_output="$(adb_phone shell am start -W -n "$FLIPEX_COMPONENT" 2>&1 | tr -d '\r' || true)"
   if grep -Eqi 'Error:|Exception|does not exist|unable to resolve' <<<"$launch_output"; then
     printf '%s\n' "$launch_output" >&2
     die "Android n'a pas pu démarrer FlipEx. Vérifie que l'application est installée et configurée."
@@ -598,6 +599,11 @@ start_monitor() {
 
   info "Mode écran : $selected_display"
   info "Résolution : $DISPLAY_SPEC · $FPS images/s · $BIT_RATE"
+  if [[ "$FLEX_DISPLAY" == "1" ]]; then
+    info "Résolution adaptative : la surface Android suivra la taille de la fenêtre."
+  else
+    info "Résolution fixe : le redimensionnement de la fenêtre ne réduit pas la surface Android."
+  fi
   info "Souris : $MOUSE_MODE · Clavier : $KEYBOARD_MODE"
   if [[ "$MOUSE_MODE" == "sdk" ]]; then info "Mode SDK : le curseur reste sur le Chromebook et les clics sont transmis à Android."; fi
   if [[ "$KEYBOARD_MODE" == "uhid" ]]; then info "Configure une fois le clavier physique Android en Français (AZERTY)."; fi
