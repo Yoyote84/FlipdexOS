@@ -37,8 +37,20 @@ jobs:
           shellcheck scripts/install-scrcpy-latest.sh
           shellcheck tests/fake-tools.sh
 
-      - name: Tester les deux chemins d'affichage
+      - name: Tester les profils Plasma/KScreen
         run: bash tests/fake-tools.sh
+
+      - name: Vérifier la compatibilité Alpine/postmarketOS
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/src:ro" alpine:3.24 sh -ec '
+            apk add --no-cache bash coreutils grep
+            cd /src
+            bash -n scripts/flipex-monitor.sh
+            bash -n scripts/install-system.sh
+            bash -n scripts/install-scrcpy-latest.sh
+            bash -n tests/fake-tools.sh
+            bash tests/fake-tools.sh
+          '
 
       - name: Vérifier l'aide et les options
         run: |
