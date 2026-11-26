@@ -52,7 +52,7 @@ case "$1" in
         fi
         ;;
       settings)
-        namespace="$1"; action="$2"; key="$3"; value=""
+        action="$1"; namespace="$2"; key="$3"; value=""
         if (($# >= 4)); then value="$4"; fi
         case "$action/$key" in
           get/overlay_display_devices) cat "$FAKE_STATE" ;;
