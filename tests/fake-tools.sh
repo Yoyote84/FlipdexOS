@@ -249,9 +249,11 @@ bash "$ROOT/scripts/flipex-monitor.sh" --check
 # Manual recovery restores the original saved values, never hardcodes zero.
 serial_key="$(printf 'FAKE123' | cksum | awk '{print $1 "-" $2}')"
 mkdir -p "$HOME/.local/state/flipdex-monitor"
-printf 'enable_freeform_support=0\nforce_desktop_mode_on_external_displays=1\nenable_non_resizable_multi_window=0\n' > "$HOME/.local/state/flipdex-monitor/$serial_key.state"
+printf 'enable_freeform_support=0\nforce_desktop_mode_on_external_displays=1\nenable_non_resizable_multi_window=0\noverlay_display_devices=1920x1080/160\n' > "$HOME/.local/state/flipdex-monitor/$serial_key.state"
 printf 'enable_freeform_support=1\nforce_desktop_mode_on_external_displays=1\nenable_non_resizable_multi_window=1\n' > "$FAKE_SETTINGS_FILE"
+printf '900x700/120\n' > "$FAKE_STATE"
 bash "$ROOT/scripts/flipex-monitor.sh" --restore
+[[ "$(cat "$FAKE_STATE")" == "1920x1080/160" ]]
 grep -Fxq 'enable_freeform_support=0' "$FAKE_SETTINGS_FILE"
 grep -Fxq 'force_desktop_mode_on_external_displays=1' "$FAKE_SETTINGS_FILE"
 grep -Fxq 'enable_non_resizable_multi_window=0' "$FAKE_SETTINGS_FILE"
