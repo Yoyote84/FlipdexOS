@@ -57,20 +57,20 @@ Le réglage par défaut est :
 
 L'overlay est facultatif et n'est **pas choisi automatiquement** sur Android 17. Quand le mode overlay est utilisé, le script mémorise la valeur précédente de `overlay_display_devices` et la restaure à la fermeture de scrcpy.
 
-## Profil initial pour le Lenovo Duet
+## Profil haute netteté pour le Lenovo Duet
 
 Les réglages par défaut limitent la charge graphique et la latence :
 
-- 1280 × 720 à 30 images/s ;
+- 1920 × 1080 à 30 images/s ;
 - H.264 lorsque pris en charge ;
-- débit vidéo de 4 Mbit/s ;
+- densité virtuelle 240 DPI ;\n- débit vidéo de 12 Mbit/s ;
 - tampon vidéo minimal lorsque pris en charge ;
 - audio désactivé.
 
 Pour une image plus détaillée :
 
 ```bash
-flipex-monitor --display 1600x900/160 --fps 30 --bit-rate 6M
+flipex-monitor --display 1920x1080/240 --fps 30 --bit-rate 12M
 ```
 
 Pour privilégier la fluidité :
