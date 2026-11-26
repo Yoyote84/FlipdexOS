@@ -92,13 +92,13 @@ export ANDROID_SERIAL=FAKE123
 
 # Default mode uses direct virtual display and SDK mouse, not the overlay.
 bash "$ROOT/scripts/flipex-monitor.sh"
-grep -Fxq -- '--new-display=1280x720/160' "$FAKE_ARGS"
+grep -Fxq -- '--new-display=1920x1080/240' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--video-buffer=0' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=30' "$FAKE_ARGS"
-grep -Fxq -- '--video-bit-rate=4M' "$FAKE_ARGS"
+grep -Fxq -- '--video-bit-rate=12M' "$FAKE_ARGS"
 if grep -Fxq -- '--no-control' "$FAKE_ARGS"; then
   printf 'Le mode de contrôle ne doit pas être désactivé.\n' >&2
   exit 1
