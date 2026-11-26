@@ -26,7 +26,7 @@ io.github.yoyote84.flipdexos
 - Tests unitaires des listes blanches, des valeurs de réglage et du format de version One UI.
 - Workflow GitHub Actions Android : compilation `debug`, tests JUnit, génération SHA-256 et publication de l'APK de test.
 
-Le client Chromebook a été mis à jour pour vérifier notre paquet Android et passer `--start-app=io.github.yoyote84.flipdexos/.desktop.DesktopActivity` à scrcpy. Il n'ouvre plus le panneau compagnon sur l'écran principal du téléphone avant de lancer le second écran.
+Le client Chromebook a été mis à jour pour vérifier notre paquet Android et passer `--start-app=io.github.yoyote84.flipdexos` à scrcpy. `MainActivity` redirige ensuite vers `DesktopActivity` lorsqu'elle est lancée sur l'écran virtuel ; le panneau compagnon reste la page d'accueil du téléphone.
 
 ### Configuration de compilation
 
