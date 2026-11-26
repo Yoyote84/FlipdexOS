@@ -54,7 +54,7 @@ if [[ "$MODE" == "user" ]]; then
   APP_DIR="$HOME/.local/share/applications"
   install -Dm755 "$ROOT/scripts/flipex-monitor.sh" "$BIN_DIR/flipex-monitor"
   write_desktop "$APP_DIR/flipex-monitor.desktop" "$BIN_DIR/flipex-monitor"
-  printf 'FlipEx Monitor installé pour %s.\n' "${USER:-$LOGNAME}"
+  printf 'FlipEx Monitor installé pour %s.\n' "${USER:-${LOGNAME:-utilisateur}}"
   printf 'Raccourci Plasma : %s/flipex-monitor.desktop\n' "$APP_DIR"
   printf 'Commande : %s/flipex-monitor\n' "$BIN_DIR"
   if [[ ":${PATH}:" != *":$BIN_DIR:"* ]]; then
