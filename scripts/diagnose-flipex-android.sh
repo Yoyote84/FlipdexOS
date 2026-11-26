@@ -105,7 +105,7 @@ report() {
   if [[ "$sdk" == "37" ]]; then
     printf '%s\n' "Contrôle API : Android 17 / API 37 détecté."
   elif [[ "$sdk" =~ ^[0-9]+$ ]]; then
-    printf 'Contrôle API : API %s détectée ; ce n’est pas API 37.\n' "$sdk"
+    printf "Contrôle API : API %s détectée ; ce n'est pas API 37.\\n" "$sdk"
   else printf '%s\n' "Contrôle API : impossible à déterminer."; fi
 
   printf '\n%s\n' "[Shizuku]"
@@ -120,7 +120,7 @@ report() {
   printf '\n%s\n' "[FlipEx]"
   if [[ -n "$flipex_path" ]]; then
     printf 'Application : installée (%s)\n' "${flipex_version:-version inconnue}"
-    printf 'targetSdk de l’APK installé : %s\n' "${flipex_target:-inconnu}"
+    printf "targetSdk de l'APK installé : %s\\n" "${flipex_target:-inconnu}"
     if [[ "$sdk" == "37" && "$flipex_target" == "36" ]]; then
       printf '%s\n' "APK ciblant API 36 sur Android 17 ; cela ne prouve pas encore la compatibilité DeX."
     fi
