@@ -57,27 +57,26 @@ Le réglage par défaut est :
 
 L'overlay est facultatif et n'est **pas choisi automatiquement** sur Android 17. Quand le mode overlay est utilisé, le script mémorise la valeur précédente de `overlay_display_devices` et la restaure à la fermeture de scrcpy.
 
-## Profil haute netteté pour le Lenovo Duet
+## Résolution et netteté
 
-Les réglages par défaut limitent la charge graphique et la latence :
+Le profil par défaut `--display auto` détecte le mode d'affichage actif du Chromebook et aligne l'écran virtuel sur la surface réellement rendue par FlipEx. Le code Android FlipEx actuel limite le petit côté de sa surface DeX à **1080 pixels**. Demander 1440p ou 4K à scrcpy n'ajoute aucun détail lorsque FlipEx dessine toujours une image 1080p : cela agrandit seulement cette image et peut rendre le texte et les contours flous.
 
-- 3840 × 2160 à 30 images/s ;
-- H.264 lorsque pris en charge ;
-- densité virtuelle 480 DPI ;\n- débit vidéo de 40 Mbit/s ;
-- tampon vidéo minimal lorsque pris en charge ;
-- audio désactivé.
+Exemples :
 
-Pour une image plus détaillée :
+- Lenovo Duet en 1920 × 1200 (16:10) : **1728 × 1080**.
+- Écran 1920 × 1080 (16:9) : **1920 × 1080**.
+- Écran 3840 × 2160 (4K) : **1920 × 1080**, sans agrandissement artificiel.
 
-```bash
-flipex-monitor --display 3840x2160/480 --fps 30 --bit-rate 40M
-```
+Le profil reprend aussi la densité DeX Samsung lorsqu'elle est disponible, utilise H.264, 20 Mbit/s, 30 FPS et un tampon vidéo minimal. Lorsque scrcpy le permet, il désactive la réduction automatique de résolution après une erreur d'encodeur pour éviter une baisse silencieuse de définition.
 
-Pour privilégier la fluidité :
+Pour forcer manuellement la résolution :
 
 ```bash
-flipex-monitor --display 1280x720/160 --fps 25 --bit-rate 3M
+flipex-monitor --display 1728x1080/160
+flipex-monitor --display 1920x1080/160
 ```
+
+Pour une vraie sortie DeX 1440p ou 4K, il faudra d'abord modifier FlipEx pour que son écran virtuel interne soit rendu au-delà de sa limite actuelle de 1080 pixels. Augmenter uniquement la capture scrcpy ne peut pas recréer les détails que l'application Android n'a pas dessinés.
 
 ## Prérequis
 
