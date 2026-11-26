@@ -17,7 +17,7 @@ L'objectif est que l'écran principal du téléphone reste utilisable indépenda
 2. FlipdexOS vérifie le Binder Shizuku et lie un UserService limité à une liste précise de propriétés et de réglages Android.
 3. Le Chromebook se connecte au téléphone par USB et ADB.
 4. scrcpy crée un **nouvel écran virtuel**, indépendant de l'écran principal.
-5. scrcpy démarre `io.github.yoyote84.flipdexos/.desktop.DesktopActivity` sur cet écran avec `--start-app`.
+5. scrcpy démarre le paquet `io.github.yoyote84.flipdexos` sur cet écran avec `--start-app`. Son activité compagnon détecte qu'elle n'est pas sur l'écran principal et redirige vers `DesktopActivity`.
 6. Le bureau FlipdexOS affiche les applications installées et les lance sur le même écran secondaire.
 
 Le bureau est encore un premier lanceur d'applications : une barre des tâches complète, la gestion avancée des fenêtres, les bureaux multiples et les raccourcis système restent à construire et à tester.
