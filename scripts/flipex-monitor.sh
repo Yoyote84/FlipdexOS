@@ -3,16 +3,16 @@
 # DeX virtual/overlay display with Chromebook mouse + keyboard input.
 set -Eeuo pipefail
 
-VERSION="0.6.0"
+VERSION="0.7.0"
 ADB_BIN="${ADB:-adb}"
 SCRCPY_BIN="${SCRCPY:-scrcpy}"
 SERIAL="${ANDROID_SERIAL:-}"
-DISPLAY_SPEC="2560x1440/320"
+DISPLAY_SPEC="3840x2160/480"
 DISPLAY_MODE="virtual"
 MOUSE_MODE="sdk"
 KEYBOARD_MODE="uhid"
 FPS="30"
-BIT_RATE="20M"
+BIT_RATE="40M"
 ACTION="start"
 FLIPEX_COMPONENT="dev.ved.flipdex/.MainActivity"
 ANDROID_SDK=""
@@ -53,7 +53,7 @@ Actions:
 
 Connexion et affichage:
   --serial SERIAL               Choisir un appareil ADB précis
-  --display WxH[/DPI]           Résolution (défaut: 2560x1440/320)
+  --display WxH[/DPI]           Résolution (défaut: 3840x2160/480)
   --display-mode virtual|overlay
                                 virtual = écran virtuel scrcpy (défaut)
                                 overlay = écran secondaire Android alternatif
@@ -61,7 +61,7 @@ Connexion et affichage:
                                 uhid = souris HID Android, pointeur capturé
   --keyboard uhid|sdk           uhid = vrai clavier physique (AZERTY à configurer sur Android)
   --fps N                       Images/s, 1 à 60 (défaut: 30)
-  --bit-rate RATE               Débit vidéo, ex. 4M, 6M ou 8M (défaut: 20M)
+  --bit-rate RATE               Débit vidéo, ex. 4M, 6M ou 8M (défaut: 40M)
 
 Exemples:
   flipex-monitor
