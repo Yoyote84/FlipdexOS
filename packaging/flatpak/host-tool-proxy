@@ -16,8 +16,40 @@ command -v flatpak-spawn >/dev/null 2>&1 || {
   exit 127
 }
 
-# Use the host PATH (not /app/bin from the sandbox). The application only
-# proxies this fixed allow-list; ADB and scrcpy keep the host USB/display setup.
-exec flatpak-spawn --host \
-  --env=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+# GUI tools run on the host, outside the sandbox. Forward only the session
+# variables needed to reconnect scrcpy/KScreen to this user's Plasma session.
+exec flatpak-spawn --host /bin/sh -c '
+  set -eu
+  export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+  [ -n "$1" ] && export DISPLAY="$1"
+  shift
+  [ -n "$1" ] && export WAYLAND_DISPLAY="$1"
+  shift
+  [ -n "$1" ] && export XDG_RUNTIME_DIR="$1"
+  shift
+  [ -n "$1" ] && export XAUTHORITY="$1"
+  shift
+  [ -n "$1" ] && export XDG_SESSION_TYPE="$1"
+  shift
+  [ -n "$1" ] && export XDG_CURRENT_DESKTOP="$1"
+  shift
+  [ -n "$1" ] && export QT_QPA_PLATFORM="$1"
+  shift
+  [ -n "$1" ] && export GDK_BACKEND="$1"
+  shift
+  [ -n "$1" ] && export SDL_VIDEODRIVER="$1"
+  shift
+
+  exec "$@"
+' flipdexos-host-tool \
+  "${DISPLAY:-}" \
+  "${WAYLAND_DISPLAY:-}" \
+  "${XDG_RUNTIME_DIR:-}" \
+  "${XAUTHORITY:-}" \
+  "${XDG_SESSION_TYPE:-}" \
+  "${XDG_CURRENT_DESKTOP:-}" \
+  "${QT_QPA_PLATFORM:-}" \
+  "${GDK_BACKEND:-}" \
+  "${SDL_VIDEODRIVER:-}" \
   "$tool" "$@"
