@@ -14,6 +14,7 @@ jobs:
   android:
     name: Compiler et tester l'APK Z Flip6
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v7
@@ -49,16 +50,6 @@ jobs:
       - name: Compiler l'APK debug
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Tester le démarrage sur émulateur Android 16
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 36
-          target: google_apis
-          arch: x86_64
-          profile: pixel_7_pro
-          disable-animations: true
-          script: bash tests/android-emulator-smoke.sh
-
       - name: Vérifier et calculer la somme SHA-256
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
@@ -74,3 +65,14 @@ jobs:
             app/build/outputs/apk/debug/app-debug.apk.sha256
           if-no-files-found: error
           retention-days: 30
+
+      - name: Tester le démarrage sur émulateur Android 16
+        uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 12
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7_pro
+          disable-animations: true
+          script: bash tests/android-emulator-smoke.sh
