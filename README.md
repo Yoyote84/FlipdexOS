@@ -61,16 +61,16 @@ L'overlay est facultatif et n'est **pas choisi automatiquement** sur Android 17.
 
 Les réglages par défaut limitent la charge graphique et la latence :
 
-- 1920 × 1080 à 30 images/s ;
+- 2560 × 1440 à 30 images/s ;
 - H.264 lorsque pris en charge ;
-- densité virtuelle 240 DPI ;\n- débit vidéo de 12 Mbit/s ;
+- densité virtuelle 320 DPI ;\n- débit vidéo de 20 Mbit/s ;
 - tampon vidéo minimal lorsque pris en charge ;
 - audio désactivé.
 
 Pour une image plus détaillée :
 
 ```bash
-flipex-monitor --display 1920x1080/240 --fps 30 --bit-rate 12M
+flipex-monitor --display 2560x1440/320 --fps 30 --bit-rate 20M
 ```
 
 Pour privilégier la fluidité :
