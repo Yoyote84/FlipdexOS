@@ -7,8 +7,14 @@ trap 'rm -rf "$TMP"' EXIT
 
 export FAKE_STATE="$TMP/overlay-setting"
 export FAKE_ARGS="$TMP/scrcpy-args"
+export FAKE_SETTINGS_FILE="$TMP/global-settings"
+export FAKE_SHIZUKU=present
+export FAKE_SHIZUKU_SERVER=running
+export HOME="$TMP/home"
+mkdir -p "$HOME"
 export FAKE_SDK=37
 printf 'null\n' > "$FAKE_STATE"
+printf 'enable_freeform_support=0\nforce_desktop_mode_on_external_displays=0\nenable_non_resizable_multi_window=1\n' > "$FAKE_SETTINGS_FILE"
 
 cat > "$TMP/adb" <<'ADB'
 #!/usr/bin/env bash
@@ -27,25 +33,56 @@ case "$1" in
       getprop)
         case "$1" in
           ro.build.version.sdk) printf '%s\n' "$FAKE_SDK" ;;
+          ro.build.version.release) printf '17\n' ;;
+          ro.build.version.oneui) printf '90000\n' ;;
           ro.product.model) printf 'Galaxy Z Flip6\n' ;;
         esac
         ;;
-      pm) printf 'package:/data/app/dev.ved.flipdex/base.apk\n' ;;
+      pm)
+        case "$1/$2" in
+          path/dev.ved.flipdex) printf 'package:/data/app/dev.ved.flipdex/base.apk\n' ;;
+          path/moe.shizuku.privileged.api)
+            [[ "$FAKE_SHIZUKU" == "present" ]] && printf 'package:/data/app/moe.shizuku.privileged.api/base.apk\n'
+            ;;
+        esac
+        ;;
+      ps)
+        if [[ "$FAKE_SHIZUKU_SERVER" == "running" ]]; then
+          printf 'USER PID PPID VSZ RSS WCHAN ADDR S NAME\nshell 1234 1 123 456 0 0 S shizuku_server\n'
+        fi
+        ;;
       settings)
-        action="$1"; shift
-        shift
-        key="$1"; shift
+        namespace="$1"; action="$2"; key="$3"; value=""
+        if (($# >= 4)); then value="$4"; fi
         case "$action/$key" in
           get/overlay_display_devices) cat "$FAKE_STATE" ;;
           get/screen_zoom_on_external_desktop_display) printf '160\n' ;;
-          put/overlay_display_devices) printf '%s\n' "$1" > "$FAKE_STATE" ;;
+          get/*)
+            stored="$(awk -F= -v wanted="$key" '$1 == wanted { print $2; found=1; exit } END { if (!found) print "null" }' "$FAKE_SETTINGS_FILE")"
+            printf '%s\n' "$stored"
+            ;;
+          put/overlay_display_devices) printf '%s\n' "$value" > "$FAKE_STATE" ;;
+          put/*)
+            grep -v "^$key=" "$FAKE_SETTINGS_FILE" > "$FAKE_SETTINGS_FILE.tmp" || true
+            printf '%s=%s\n' "$key" "$value" >> "$FAKE_SETTINGS_FILE.tmp"
+            mv "$FAKE_SETTINGS_FILE.tmp" "$FAKE_SETTINGS_FILE"
+            ;;
           delete/overlay_display_devices) printf 'null\n' > "$FAKE_STATE" ;;
+          delete/*)
+            grep -v "^$key=" "$FAKE_SETTINGS_FILE" > "$FAKE_SETTINGS_FILE.tmp" || true
+            mv "$FAKE_SETTINGS_FILE.tmp" "$FAKE_SETTINGS_FILE"
+            ;;
           *) : ;;
         esac
         ;;
       dumpsys)
         case "$1" in
-          package) printf 'Package [dev.ved.flipdex] targetSdk=36\n' ;;
+          package)
+            case "$2" in
+              dev.ved.flipdex) printf 'Package [dev.ved.flipdex] targetSdk=36\n    versionName=0.3.4\n' ;;
+              moe.shizuku.privileged.api) printf 'Package [moe.shizuku.privileged.api]\n    versionName=13.6.0\n' ;;
+            esac
+            ;;
           display)
             if [[ "$(cat "$FAKE_STATE")" != "null" ]]; then
               printf 'mDisplayId=2, type OVERLAY, displayId 2, state ON\n'
@@ -54,7 +91,7 @@ case "$1" in
         esac
         ;;
       wm) : ;;
-      am) printf 'Starting: Intent { cmp=dev.ved.flipdex/.MainActivity }\n' ;;
+      am) printf 'Starting: Intent { cmp=dev.ved.flipdex/.MainActivity }\nStatus: ok\nComplete\n' ;;
       *) : ;;
     esac
     ;;
