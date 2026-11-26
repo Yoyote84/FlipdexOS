@@ -19,7 +19,7 @@ jobs:
       options: --privileged
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Construire et publier le bundle de test
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
