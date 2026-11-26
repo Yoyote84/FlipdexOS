@@ -88,7 +88,7 @@ if [[ "${1:-}" == "--help" ]]; then
 HELP
   exit 0
 fi
-if [[ "${1:-}" == "--version" ]]; then printf 'scrcpy 5.0.1\n'; exit 0; fi
+if [[ "${1:-}" == "--version" ]]; then printf 'scrcpy %s\n' "${FAKE_SCRCPY_VERSION:-5.0.1}"; exit 0; fi
 printf '%s\n' "$@" > "$FAKE_ARGS"
 SCRCPY
 
@@ -186,5 +186,14 @@ if grep -Fq -- '--new-display=' "$FAKE_ARGS"; then
   exit 1
 fi
 [[ "$(cat "$FAKE_STATE")" == "null" ]]
+
+# The launcher must reject older scrcpy versions and accept 5.0.1.
+export FAKE_SCRCPY_VERSION=5.0.0
+if bash "$ROOT/scripts/flipex-monitor.sh" --check; then
+  printf 'scrcpy 5.0.0 ne doit pas être accepté.\n' >&2
+  exit 1
+fi
+export FAKE_SCRCPY_VERSION=5.0.1
+bash "$ROOT/scripts/flipex-monitor.sh" --check
 
 printf 'Tous les tests FlipEx Monitor sont passés.\n'
