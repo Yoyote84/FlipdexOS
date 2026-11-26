@@ -37,15 +37,21 @@ case "$1" in
         key="$1"; shift
         case "$action/$key" in
           get/overlay_display_devices) cat "$FAKE_STATE" ;;
+          get/screen_zoom_on_external_desktop_display) printf '160\n' ;;
           put/overlay_display_devices) printf '%s\n' "$1" > "$FAKE_STATE" ;;
           delete/overlay_display_devices) printf 'null\n' > "$FAKE_STATE" ;;
           *) : ;;
         esac
         ;;
       dumpsys)
-        if [[ "$(cat "$FAKE_STATE")" != "null" ]]; then
-          printf 'mDisplayId=2, type OVERLAY, displayId 2, state ON\n'
-        fi
+        case "$1" in
+          package) printf 'Package [dev.ved.flipdex] targetSdk=36\n' ;;
+          display)
+            if [[ "$(cat "$FAKE_STATE")" != "null" ]]; then
+              printf 'mDisplayId=2, type OVERLAY, displayId 2, state ON\n'
+            fi
+            ;;
+        esac
         ;;
       wm) : ;;
       am) printf 'Starting: Intent { cmp=dev.ved.flipdex/.MainActivity }\n' ;;
@@ -86,24 +92,54 @@ printf '%s\n' "$@" > "$FAKE_ARGS"
 SCRCPY
 
 chmod +x "$TMP/scrcpy"
+
+cat > "$TMP/xrandr" <<'XRANDR'
+#!/usr/bin/env bash
+mode="$FAKE_HOST_MODE"
+[[ -n "$mode" ]] || mode="1920x1200"
+[[ "$mode" != "none" ]] || exit 1
+printf 'Screen 0: minimum 320 x 200, current 1920 x 1200, maximum 8192 x 8192\n'
+printf 'eDP-1 connected primary %s+0+0 (normal left inverted right x axis y axis) 250mm x 150mm\n' "$mode"
+XRANDR
+chmod +x "$TMP/xrandr"
+export PATH="$TMP:$PATH"
+export FAKE_HOST_MODE=1920x1200
 export ADB="$TMP/adb"
 export SCRCPY="$TMP/scrcpy"
 export ANDROID_SERIAL=FAKE123
 
 # Default mode uses direct virtual display and SDK mouse, not the overlay.
 bash "$ROOT/scripts/flipex-monitor.sh"
-grep -Fxq -- '--new-display=3840x2160/480' "$FAKE_ARGS"
+grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
 grep -Fxq -- '--mouse=sdk' "$FAKE_ARGS"
 grep -Fxq -- '--mouse-bind=++++:++++' "$FAKE_ARGS"
 grep -Fxq -- '--keyboard=uhid' "$FAKE_ARGS"
 grep -Fxq -- '--video-buffer=0' "$FAKE_ARGS"
+grep -Fxq -- '--no-downsize-on-error' "$FAKE_ARGS"
 grep -Fxq -- '--max-fps=30' "$FAKE_ARGS"
-grep -Fxq -- '--video-bit-rate=40M' "$FAKE_ARGS"
+grep -Fxq -- '--video-bit-rate=20M' "$FAKE_ARGS"
 if grep -Fxq -- '--no-control' "$FAKE_ARGS"; then
   printf 'Le mode de contrôle ne doit pas être désactivé.\n' >&2
   exit 1
 fi
 [[ "$(cat "$FAKE_STATE")" == "null" ]]
+
+
+# 16:9, 4K and 16:10 profiles match the true FlipEx 1080p rendering surface.
+export FAKE_HOST_MODE=1920x1080
+bash "$ROOT/scripts/flipex-monitor.sh"
+grep -Fxq -- '--new-display=1920x1080/160' "$FAKE_ARGS"
+
+export FAKE_HOST_MODE=3840x2160
+bash "$ROOT/scripts/flipex-monitor.sh"
+grep -Fxq -- '--new-display=1920x1080/160' "$FAKE_ARGS"
+
+export FAKE_HOST_MODE=none
+bash "$ROOT/scripts/flipex-monitor.sh"
+grep -Fxq -- '--new-display=1728x1080/160' "$FAKE_ARGS"
+
+bash "$ROOT/scripts/flipex-monitor.sh" --display 2560x1440/320
+grep -Fxq -- '--new-display=2560x1440/320' "$FAKE_ARGS"
 
 # Android 16: virtual display path and physical UHID mouse remain selectable.
 export FAKE_SDK=36
