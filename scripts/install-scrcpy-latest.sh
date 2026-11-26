@@ -70,7 +70,9 @@ info "Compilation du client pour $(uname -m)…"
 info "Installation dans /usr/local…"
 root_run ninja -C "$TMP_DIR/scrcpy/build-auto" install
 
-INSTALLED_VERSION="$(scrcpy --version 2>&1 | head -n 1)"
+INSTALLED_BIN="/usr/local/bin/scrcpy"
+[[ -x "$INSTALLED_BIN" ]] || die "le binaire n'a pas été installé dans /usr/local/bin."
+INSTALLED_VERSION="$("$INSTALLED_BIN" --version 2>&1 | head -n 1)"
 grep -Fq "scrcpy 5.0.1" <<<"$INSTALLED_VERSION" \
   || die "version installée inattendue : $INSTALLED_VERSION"
 info "$INSTALLED_VERSION installé avec succès."
