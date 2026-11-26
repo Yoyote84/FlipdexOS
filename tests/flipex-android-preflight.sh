@@ -55,7 +55,7 @@ case "${1:-}" in
               printf '    versionCode=13600 minSdk=23 targetSdk=35\n    versionName=13.6.0\n'
               ;;
             io.github.yoyote84.flipdexos)
-              printf '    versionCode=7 minSdk=31 targetSdk=36\n    versionName=0.3.4\n'
+              printf '    versionCode=7 minSdk=31 targetSdk=36\n    versionName=0.1.0-alpha01-debug\n'
               ;;
           esac
         fi
@@ -82,7 +82,7 @@ OUTPUT="$(bash "$ROOT/scripts/diagnose-flipex-android.sh")"
 grep -Fq 'Android : 17 (API 37)' <<<"$OUTPUT"
 grep -Fq 'One UI : 9.0' <<<"$OUTPUT"
 grep -Fq 'Application : installée (13.6.0)' <<<"$OUTPUT"
-grep -Fq 'Application : installée (0.1.0-alpha01)' <<<"$OUTPUT"
+grep -Fq 'Application : installée (0.1.0-alpha01-debug)' <<<"$OUTPUT"
 grep -Fq "targetSdk de l'APK installé : 36" <<<"$OUTPUT"
 grep -Fq 'Lecture seule' <<<"$OUTPUT"
 grep -Fq 'Processus serveur : détecté' <<<"$OUTPUT"
