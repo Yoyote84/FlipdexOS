@@ -408,6 +408,13 @@ valid_saved_setting() {
   [[ "$1" == "null" || "$1" == "0" || "$1" == "1" ]]
 }
 
+valid_overlay_setting() {
+  local value="$1"
+  [[ "$value" == "null" ]] && return 0
+  (( ${#value} >= 1 && ${#value} <= 512 )) || return 1
+  [[ "$value" != *[!A-Za-z0-9._,:/+_-]* ]]
+}
+
 save_settings_snapshot() {
   local freeform force_desktop non_resizable overlay_value temp_file
   state_file_for_device
@@ -421,7 +428,7 @@ save_settings_snapshot() {
   valid_saved_setting "$non_resizable" || die "impossible de sauvegarder enable_non_resizable_multi_window sans risque."
   if [[ "$DISPLAY_MODE" == "overlay" ]]; then
     overlay_value="$(read_global_setting overlay_display_devices)"
-    [[ "$overlay_value" == "null" || "$overlay_value" =~ ^[-A-Za-z0-9._,:/+]{1,512}$ ]] || die "valeur overlay_display_devices inattendue; aucun réglage n'a été changé."
+    valid_overlay_setting "$overlay_value" || die "valeur overlay_display_devices inattendue; aucun réglage n'a été changé."
   fi
   temp_file="$(mktemp "$STATE_DIR/.session.XXXXXX")"
   {
@@ -464,7 +471,7 @@ restore_saved_settings() {
   if [[ -n "$value" ]]; then
     if [[ "$value" == "null" ]]; then
       adb_phone shell settings delete global overlay_display_devices >/dev/null 2>&1 || failed=1
-    elif [[ "$value" =~ ^[-A-Za-z0-9._,:/+]{1,512}$ ]]; then
+    elif valid_overlay_setting "$value"; then
       adb_phone shell settings put global overlay_display_devices "$value" >/dev/null 2>&1 || failed=1
     else
       warn "valeur overlay sauvegardée invalide; fichier conservé."
